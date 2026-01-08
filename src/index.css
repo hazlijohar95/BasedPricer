@@ -1,0 +1,570 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #253ff6;
+  --color-primary-hover: #1e35d4;
+  --color-primary-light: rgba(37, 63, 246, 0.08);
+  --color-border: #e4e4e4;
+  --color-border-dark: #d9d9d9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-success: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.08);
+  --color-warning: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.08);
+  --color-danger: #ef4444;
+  --color-danger-light: rgba(239, 68, 68, 0.08);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+/* Card styles - matching data room */
+.card {
+  background: white;
+  border-radius: 0.2rem;
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--color-border-dark);
+}
+
+.card-interactive {
+  cursor: pointer;
+}
+
+/* Ensure all clickable elements have pointer cursor */
+button,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+select,
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]) {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  border-color: var(--color-primary);
+}
+
+/* Button styles - matching data room */
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 0.2rem;
+  transition: all 0.2s ease;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-size: 14px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 0.2rem;
+  border: 1px solid var(--color-border);
+  transition: all 0.2s ease;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-dark);
+}
+
+.btn-secondary:active {
+  transform: scale(0.95);
+}
+
+/* Input styles - matching data room */
+.input-field {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 0.2rem;
+  padding: 8px 12px;
+  font-size: 14px;
+  height: 38px;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.input-field::placeholder {
+  color: var(--color-text-muted);
+}
+
+textarea.input-field {
+  height: auto;
+  min-height: 80px;
+}
+
+/* Select styles */
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 20px;
+  padding-right: 36px;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 0.2rem;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.badge-success {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.badge-danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Table styles - matching data room */
+.table-header {
+  background: var(--color-surface-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.table-row {
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.15s ease;
+}
+
+.table-row:hover {
+  background: var(--color-surface-muted);
+}
+
+/* Toggle switch - matching data room style */
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: #e5e7eb;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.toggle-switch.active {
+  background: var(--color-primary);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch.active::after {
+  transform: translateX(18px);
+}
+
+/* Tab pill styles */
+.tab-pill {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0.2rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tab-pill:active {
+  transform: scale(0.95);
+}
+
+.tab-pill.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.tab-pill:not(.active) {
+  color: var(--color-text-secondary);
+}
+
+.tab-pill:not(.active):hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+/* Metric card with gradient */
+.metric-card {
+  border-radius: 0.2rem;
+  padding: 20px;
+  color: white;
+}
+
+.metric-card.primary {
+  background: linear-gradient(135deg, #253ff6 0%, #1e35d4 100%);
+}
+
+.metric-card.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.metric-card.warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.metric-card.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.metric-card.violet {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* Nav item styles */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 0.2rem;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.nav-item:active {
+  transform: scale(0.98);
+}
+
+.nav-item.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.nav-item:not(.active) {
+  color: var(--color-text-secondary);
+}
+
+.nav-item:not(.active):hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+/* Status dot */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background: var(--color-success);
+}
+
+.status-dot.pending {
+  background: var(--color-warning);
+}
+
+.status-dot.inactive {
+  background: var(--color-text-muted);
+}
+
+/* ============================================================================
+   PRINT STYLES - Optimized for A4 paper reports
+   ============================================================================ */
+
+@media print {
+  /* Page setup */
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm 1.5cm 2cm 1.5cm;
+  }
+
+  /* Reset base styles for print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    background: white !important;
+  }
+
+  /* Hide non-printable elements */
+  .print\:hidden,
+  header.print\:hidden,
+  footer.print\:hidden,
+  nav,
+  button:not(.print\:visible),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Page break controls */
+  .report-section,
+  .print\:break-inside-avoid,
+  .card,
+  table,
+  .metric-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print\:break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .print\:break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  /* Remove decorative styles */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Fix backgrounds and borders */
+  .card {
+    border: 1px solid #e5e7eb !important;
+    background: white !important;
+  }
+
+  /* Convert dark gradients to light for print */
+  [class*="from-gray-900"],
+  [class*="from-gray-800"],
+  [class*="bg-gray-900"],
+  [class*="bg-gray-800"] {
+    background: #f9fafb !important;
+    color: #1f2937 !important;
+  }
+
+  /* Primary gradient cards - convert to bordered style */
+  .metric-card,
+  [class*="from-\\[\\#253ff6\\]"],
+  [class*="bg-\\[\\#253ff6\\]"] {
+    background: white !important;
+    border: 2px solid #253ff6 !important;
+    color: #1f2937 !important;
+  }
+
+  .metric-card .text-white,
+  .metric-card [class*="text-white"] {
+    color: #1f2937 !important;
+  }
+
+  /* Fix gradient text */
+  [class*="from-emerald"],
+  [class*="from-blue"],
+  [class*="from-violet"],
+  [class*="from-amber"] {
+    background: white !important;
+    border: 1px solid currentColor !important;
+  }
+
+  /* Tables - ensure proper rendering */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #e5e7eb !important;
+    padding: 8px !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  /* Remove sticky positioning for print */
+  .sticky,
+  [class*="sticky"] {
+    position: static !important;
+  }
+
+  /* Grid adjustments for A4 width */
+  .print\:grid-cols-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .print\:grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .print\:flex-col {
+    flex-direction: column !important;
+  }
+
+  .print\:w-full {
+    width: 100% !important;
+  }
+
+  /* Typography adjustments */
+  h1 { font-size: 18pt !important; }
+  h2 { font-size: 14pt !important; }
+  h3 { font-size: 12pt !important; }
+
+  .text-xs { font-size: 9pt !important; }
+  .text-sm { font-size: 10pt !important; }
+  .text-base { font-size: 11pt !important; }
+  .text-lg { font-size: 12pt !important; }
+  .text-xl { font-size: 14pt !important; }
+  .text-2xl { font-size: 16pt !important; }
+  .text-3xl { font-size: 18pt !important; }
+
+  /* Links - show URL for print */
+  a[href]:after {
+    content: none !important; /* Don't show URLs, keep it clean */
+  }
+
+  /* Ensure proper contrast */
+  .text-gray-400,
+  .text-gray-500 {
+    color: #4b5563 !important;
+  }
+
+  /* Report-specific layout fixes */
+  .report-content {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure images scale properly */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Footer for print */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9pt;
+    color: #9ca3af;
+    padding: 8px;
+  }
+
+  /* Widows and orphans */
+  p, li, h1, h2, h3, h4, h5, h6 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Specific fixes for report grids */
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  @media (max-width: 210mm) {
+    .grid-cols-3,
+    .grid-cols-4,
+    .grid-cols-2 {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
