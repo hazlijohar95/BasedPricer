@@ -1,0 +1,27 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="180" height="180" rx="36" fill="url(#bgGrad)"/>
+
+  <!-- Centered logo mark (scaled from 32x32) -->
+  <g transform="translate(46, 46) scale(2.75)">
+    <!-- Left column - base pillar -->
+    <rect x="7" y="7" width="4" height="18" rx="1" fill="white" fill-opacity="0.95"/>
+
+    <!-- Top bar -->
+    <rect x="13" y="7" width="6" height="4" rx="1" fill="white" fill-opacity="0.6"/>
+
+    <!-- Middle bar -->
+    <rect x="13" y="13" width="8" height="4" rx="1" fill="white" fill-opacity="0.8"/>
+
+    <!-- Bottom bar -->
+    <rect x="13" y="19" width="12" height="6" rx="1" fill="white"/>
+  </g>
+</svg>

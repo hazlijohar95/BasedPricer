@@ -37,3 +37,12 @@ export { SourceBadge, type FeatureSource } from './SourceBadge';
 
 // View toggle
 export { TabToggle, type TabOption } from './TabToggle';
+
+// Onboarding
+export { OnboardingModal } from './OnboardingModal';
+
+// Validated inputs
+export { ValidatedInput, NumberInput, CurrencyInput } from './ValidatedInput';
+
+// Project management
+export { ProjectManager } from './ProjectManager';

@@ -21,6 +21,7 @@ import {
   getUrlStats,
   type ReportData
 } from '../utils/reportEncoder';
+import { useEscapeKey, useFocusTrap } from '../hooks';
 
 interface ReportGeneratorProps {
   isOpen: boolean;
@@ -40,6 +41,10 @@ const stakeholders: { key: StakeholderKey; label: string; icon: typeof FileText;
 export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
   const pricingState = usePricing();
   const [projectName, setProjectName] = useState('My SaaS Product');
+
+  // Keyboard navigation
+  useEscapeKey(onClose, isOpen);
+  const modalRef = useFocusTrap<HTMLDivElement>(isOpen);
   const [notes, setNotes] = useState<Record<StakeholderKey, string>>({
     accountant: '',
     investor: '',
@@ -59,6 +64,7 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
       fixedCosts: pricingState.fixedCosts,
       customerCount: pricingState.customerCount,
       selectedPrice: pricingState.selectedPrice,
+      currency: pricingState.currency,
       tiers: pricingState.tiers,
       features: pricingState.features,
       tierDisplayConfigs: pricingState.tierDisplayConfigs,
@@ -67,6 +73,7 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
       businessType: pricingState.businessType,
       businessTypeConfidence: pricingState.businessTypeConfidence,
       pricingModelType: pricingState.pricingModelType,
+      isFirstVisit: pricingState.isFirstVisit,
     };
     return createReportData(projectName, state, notes);
   }, [pricingState, projectName, notes]);
@@ -147,7 +154,7 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div ref={modalRef} className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-2">

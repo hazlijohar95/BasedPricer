@@ -1,6 +1,11 @@
 // Unified cost calculation utilities
 // Single source of truth for all COGS, margin, and pricing calculations
 
+import {
+  getMarginStatusFromThreshold,
+  getMarginStyleFromThreshold,
+} from '../constants';
+
 // ============================================================================
 // Rounding Utilities
 // ============================================================================
@@ -152,15 +157,13 @@ export function calculateProfit(price: number, cogs: number): number {
 }
 
 /**
- * Get margin status based on thresholds
- * >= 70% = great (healthy SaaS margin)
- * >= 50% = ok (acceptable)
- * < 50% = low (concerning)
+ * Get margin status based on centralized thresholds
+ * >= HEALTHY (70%) = great (healthy SaaS margin)
+ * >= ACCEPTABLE (50%) = ok (acceptable)
+ * < ACCEPTABLE (50%) = low (concerning)
  */
 export function getMarginStatus(margin: number): 'great' | 'ok' | 'low' {
-  if (margin >= 70) return 'great';
-  if (margin >= 50) return 'ok';
-  return 'low';
+  return getMarginStatusFromThreshold(margin);
 }
 
 /**
@@ -175,20 +178,15 @@ export function getMarginInfo(price: number, cogs: number): MarginInfo {
 }
 
 /**
- * Calculate margin styling based on status
+ * Calculate margin styling based on centralized thresholds
  */
 export function getMarginStyle(margin: number): {
   dot: string;
   text: string;
   bg: string;
 } {
-  if (margin >= 70) {
-    return { dot: 'bg-teal-500', text: 'text-teal-700', bg: 'bg-teal-50' };
-  }
-  if (margin >= 50) {
-    return { dot: 'bg-amber-400', text: 'text-amber-700', bg: 'bg-amber-50' };
-  }
-  return { dot: 'bg-rose-400', text: 'text-rose-600', bg: 'bg-rose-50' };
+  const style = getMarginStyleFromThreshold(margin);
+  return { dot: style.dot, text: style.text, bg: style.bg };
 }
 
 /**

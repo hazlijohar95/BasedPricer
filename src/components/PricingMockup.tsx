@@ -12,6 +12,7 @@ import { BillingCycleToggle, Toggle, SearchInput } from './shared';
 import { getFeatureName, getFeatureLimit, calculateDiscount } from '../utils/features';
 import { DISCOUNT_PRESETS } from '../constants';
 import { usePricing, type TierDisplayConfig } from '../context/PricingContext';
+import { useNavigation } from '../context/NavigationContext';
 
 export function PricingMockup() {
   // Get tiers, features, and tier display configs from context
@@ -22,6 +23,7 @@ export function PricingMockup() {
     setTierDisplayConfig,
     initializeTierDisplayConfigs,
   } = usePricing();
+  const { previousTab, navigateTo } = useNavigation();
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [editingTier, setEditingTier] = useState<string | null>(null);
@@ -595,6 +597,19 @@ export function PricingMockup() {
   // Default view - all cards
   return (
     <div className="space-y-8">
+      {/* Back navigation */}
+      {previousTab && previousTab !== 'mockup' && (
+        <div className="flex items-center">
+          <button
+            onClick={() => navigateTo(previousTab)}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+          >
+            <ArrowLeft size={16} weight="bold" />
+            <span>Back to {previousTab === 'overview' ? 'Overview' : previousTab === 'pricing' ? 'Calculator' : previousTab === 'tiers' ? 'Tiers' : previousTab === 'cogs' ? 'COGS' : previousTab === 'features' ? 'Features' : previousTab === 'analyze' ? 'Analyzer' : previousTab}</span>
+          </button>
+        </div>
+      )}
+
       <div className="text-center max-w-2xl mx-auto">
         <h1 className="text-2xl font-semibold text-gray-900">Pricing Mockup</h1>
         <p className="text-gray-500 mt-2">Click on any card to customize and preview changes</p>

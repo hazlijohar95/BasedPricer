@@ -4,6 +4,7 @@
  */
 
 import { getPriceSensitivityStatusClass, getPriceSensitivityStatusLabel } from '../../utils/marginUtils';
+import { MARGIN_THRESHOLDS } from '../../constants';
 
 export interface PriceSensitivityRow {
   price: number;
@@ -56,7 +57,7 @@ export function PriceSensitivityTable({ data }: PriceSensitivityTableProps) {
                   MYR {testOperatingProfit.toFixed(0)}
                 </td>
                 <td className={`py-3 px-4 text-right font-semibold ${
-                  testGrossMargin >= 70 ? 'text-emerald-600' : testGrossMargin >= 50 ? 'text-amber-600' : 'text-red-600'
+                  testGrossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' : testGrossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' : 'text-red-600'
                 }`}>
                   {testGrossMargin.toFixed(1)}%
                 </td>

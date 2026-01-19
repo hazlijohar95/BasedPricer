@@ -153,13 +153,14 @@ export function FeatureInventory() {
 
           {/* Search Input */}
           <div className="relative w-64">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" weight="duotone" />
+            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" weight="duotone" aria-hidden="true" />
             <input
               type="text"
               placeholder="Search features..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white border border-[#e4e4e4] rounded-[0.2rem] py-2 pl-9 pr-3 text-sm focus:outline-none focus:border-[#253ff6] focus:ring-2 focus:ring-[rgba(37,63,246,0.08)] transition-all"
+              aria-label="Search features"
             />
           </div>
 
@@ -257,7 +258,7 @@ export function FeatureInventory() {
                 <h2 className="text-sm font-semibold text-gray-900">
                   {featureCategories[category as FeatureCategory].name}
                 </h2>
-                <span className="text-xs text-gray-400">({categoryFeatures.length})</span>
+                <span className="text-xs text-gray-500">({categoryFeatures.length})</span>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {categoryFeatures.map((feature) => (
@@ -297,7 +298,7 @@ export function FeatureInventory() {
                 <tr key={feature.id} className="table-row">
                   <td className="py-3 px-4">
                     <p className="font-medium text-gray-900 text-[15px]">{feature.name}</p>
-                    <p className="text-xs text-gray-400">{featureCategories[feature.category].name}</p>
+                    <p className="text-xs text-gray-500">{featureCategories[feature.category].name}</p>
                   </td>
                   <td className="py-3 px-4">
                     <p className="text-sm text-gray-600 line-clamp-2">{feature.description}</p>
@@ -636,7 +637,7 @@ function FeatureModal({
                 </p>
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Link this feature to a variable cost from the COGS calculator
             </p>
           </div>

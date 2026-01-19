@@ -4,6 +4,7 @@
  */
 
 import type { Tier } from '../../data/tiers';
+import { MARGIN_THRESHOLDS } from '../../constants';
 
 export interface TierCostData {
   total: number;
@@ -74,7 +75,7 @@ export function TierCardsGrid({
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Margin</span>
                   <span className={`font-medium ${
-                    tierMargin >= 65 ? 'text-emerald-600' : tierMargin >= 50 ? 'text-amber-600' : 'text-red-600'
+                    tierMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' : tierMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' : 'text-red-600'
                   }`}>
                     {tierMargin.toFixed(0)}%
                   </span>

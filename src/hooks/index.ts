@@ -6,6 +6,11 @@
 // Debounce utilities
 export { useDebouncedValue, useDebouncedCallback } from './useDebounce';
 
+// Keyboard and accessibility hooks
+export { useEscapeKey } from './useEscapeKey';
+export { useFocusTrap } from './useFocusTrap';
+export { useUndoRedo } from './useUndoRedo';
+
 // Legacy editable costs hook
 export {
   useEditableCosts,
@@ -22,6 +27,13 @@ export { useCosts, type UseCostsReturn } from './useCosts';
 export { useTiers, type UseTiersReturn } from './useTiers';
 export { useFeatures, type UseFeaturesReturn } from './useFeatures';
 export { useToast, type UseToastReturn } from './useToast';
+
+// Consolidated cost calculations - single source of truth for cost data
+export {
+  useCostCalculations,
+  type CostCalculationsResult,
+  type TierCostData,
+} from './useCostCalculations';
 
 // Internal state management hooks - used by PricingContext
 export {

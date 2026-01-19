@@ -9,6 +9,7 @@ import { BUSINESS_TYPES } from '../data/business-types';
 import { getRecommendedTierCount } from '../data/tier-templates';
 import { EmptyState, TabToggle, type TabOption } from './shared';
 import { TierCardsGrid } from './tiers';
+import { MARGIN_THRESHOLDS } from '../constants';
 
 type ViewMode = 'overview' | 'limits' | 'features' | 'highlights';
 
@@ -214,7 +215,7 @@ export function TierConfigurator() {
                       {BUSINESS_TYPES[businessType]?.name ?? businessType}
                     </span>
                     {businessTypeConfidence && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-500">
                         ({Math.round(businessTypeConfidence * 100)}% match)
                       </span>
                     )}
@@ -274,7 +275,7 @@ export function TierConfigurator() {
               })}
             </div>
             {businessType && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500">
                 (Recommended: {getRecommendedTierCount(businessType)})
               </span>
             )}
@@ -416,7 +417,7 @@ export function TierConfigurator() {
                   <div className="flex justify-between items-center py-3">
                     <span className="font-medium text-gray-900">Gross Margin</span>
                     <span className={`text-3xl font-bold ${
-                      margin >= 65 ? 'text-emerald-600' : margin >= 50 ? 'text-amber-600' : 'text-red-600'
+                      margin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' : margin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {margin.toFixed(0)}%
                     </span>
@@ -489,13 +490,14 @@ export function TierConfigurator() {
             <h3 className="font-medium text-gray-900">Feature Access for {selectedTier.name}</h3>
             <div className="flex items-center gap-4">
               <div className="relative">
-                <MagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" weight="duotone" />
+                <MagnifyingGlass size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" weight="duotone" aria-hidden="true" />
                 <input
                   type="text"
                   placeholder="Search features..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="input-field w-64 pl-10"
+                  aria-label="Search features"
                 />
               </div>
               <div className="flex gap-2 text-sm">

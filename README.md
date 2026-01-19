@@ -1,72 +1,84 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=flat-square&logo=tailwindcss" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License" />
-</p>
+<div align="center">
 
-<h1 align="center">BasedPricer</h1>
+<img src="public/og-image.svg" alt="BasedPricer" width="100%" />
 
-<p align="center">
-  <strong>AI-powered SaaS pricing calculator for founders</strong><br>
-  Analyze your codebase, detect features, and generate pricing recommendations
-</p>
+<br />
+<br />
 
----
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## Features
+**AI-powered SaaS pricing calculator for founders**
 
-| Feature | Description |
-|---------|-------------|
-| **Codebase Analyzer** | Import GitHub repos, auto-detect features & cost drivers using AI |
-| **Business Detection** | Identifies your SaaS type (API, marketplace, fintech, AI/ML, B2B, etc.) |
-| **COGS Calculator** | Break down variable & fixed costs with margin analysis |
-| **Tier Configurator** | Design pricing tiers with feature limits |
-| **Pricing Mockup** | Preview your pricing page as customers see it |
-| **Stakeholder Reports** | Generate reports for accountants, investors, engineers, marketers |
+[Demo](https://basedpricer.com) · [Report Bug](https://github.com/hazlijohar95/BasedPricer/issues) · [Request Feature](https://github.com/hazlijohar95/BasedPricer/issues)
 
----
-
-## Supported AI Providers
-
-| Provider | Models | Pricing |
-|----------|--------|---------|
-| **OpenAI** | GPT-4o, GPT-4o Mini, o1 | [View](https://openai.com/api/pricing/) |
-| **Anthropic** | Claude Sonnet 4, Claude 3.5 | [View](https://anthropic.com/pricing) |
-| **OpenRouter** | 100+ models | [View](https://openrouter.ai/models) |
-| **MiniMax** | M2.1, M1 (1M context) | [View](https://platform.minimax.io/pricing) |
-| **GLM (Zhipu)** | GLM-4 Plus, Flash | [View](https://open.bigmodel.cn/pricing) |
-| **Custom** | Any OpenAI-compatible | Self-hosted |
-
-> All keys stored locally in your browser. Never sent to our servers.
+</div>
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/hazlijohar95/BasedPricer.git
-cd BasedPricer
-npm install
-npm run dev
+git clone https://github.com/hazlijohar95/BasedPricer.git && cd BasedPricer && npm i && npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173)
+Open **[localhost:5173](http://localhost:5173)**
+
+---
+
+## What It Does
+
+| | Feature | What You Get |
+|:---:|---------|--------------|
+| 🔍 | **Codebase Analyzer** | Import GitHub repos → AI detects features & cost drivers |
+| 📊 | **COGS Calculator** | Variable + fixed costs → margin analysis |
+| 🎛️ | **Tier Designer** | Configure pricing tiers with feature limits |
+| 🎨 | **Pricing Mockup** | Preview your pricing page live |
+| 📝 | **Report Generator** | Export for accountants, investors, engineers |
+
+---
+
+## AI Providers
+
+Works with any provider. Bring your own API key.
+
+| Provider | Models | Best For |
+|----------|--------|----------|
+| **OpenAI** | GPT-4o, o1 | Balanced cost/quality |
+| **Anthropic** | Claude 4, 3.5 | Nuanced analysis |
+| **OpenRouter** | 100+ models | Model variety |
+| **MiniMax** | M2.1 (1M ctx) | Large codebases |
+| **Custom** | Any OpenAI-compatible | Self-hosted |
+
+> 🔒 Keys stored locally in browser. Never sent to our servers.
+
+---
+
+## Project Structure
+
+```
+src/
+├── components/        # UI components
+├── context/           # Global state (PricingContext)
+├── hooks/             # Custom hooks
+├── services/          # AI client, GitHub API
+└── utils/             # Calculations, formatters
+
+public/config/         # Editable JSON configs
+├── ai-providers.json  # Provider pricing data
+└── analysis-prompts.json
+```
 
 ---
 
 ## Configuration
 
-All data is externalized to JSON files - **no code changes needed** to update pricing or add providers.
+All data is JSON — no code changes needed.
 
-```
-public/config/
-├── ai-providers.json      # Provider pricing data
-├── analysis-prompts.json  # AI analysis configuration
-└── schemas/               # JSON validation schemas
-```
-
-### Update Pricing Data
+<details>
+<summary><strong>Update AI pricing</strong></summary>
 
 Edit `public/config/ai-providers.json`:
 
@@ -75,53 +87,66 @@ Edit `public/config/ai-providers.json`:
   "gpt-4o": {
     "inputPricePerMillion": 2.50,
     "outputPricePerMillion": 10.00,
-    "lastPriceUpdate": "2026-01-19",
-    "priceSource": "https://openai.com/api/pricing/"
+    "lastPriceUpdate": "2026-01-19"
   }
 }
 ```
 
-### Add Custom Provider
+</details>
 
-Add any OpenAI-compatible endpoint through the UI:
-- Self-hosted LLMs (Ollama, vLLM, LocalAI)
+<details>
+<summary><strong>Add custom provider</strong></summary>
+
+Through the UI, add any OpenAI-compatible endpoint:
+- Self-hosted LLMs (Ollama, vLLM)
 - Alternative providers (Groq, Together AI)
 - Private endpoints
 
+</details>
+
 ---
 
-## Project Structure
+## Tech Stack
 
-```
-src/
-├── components/        # React components
-├── services/          # AI client, GitHub API, config loader
-├── context/           # Global state management
-└── utils/             # Cost calculations, metrics
-
-public/config/         # User-editable configuration
-```
+| Layer | Technology |
+|-------|------------|
+| Framework | React 19 + TypeScript 5.6 |
+| Styling | Tailwind CSS 4.0 |
+| State | React Context + custom hooks |
+| Build | Vite 7 |
+| Icons | Phosphor Icons |
 
 ---
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+```bash
+# Fork & clone
+git clone https://github.com/YOUR_USERNAME/BasedPricer.git
+
+# Install & run
+npm install && npm run dev
+
+# Create branch
+git checkout -b feature/your-feature
+```
 
 **Quick contributions:**
 - Update AI pricing data
 - Add new providers
 - Improve business type detection
-- Report bugs
+- Fix bugs
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE)
+MIT — see [LICENSE](LICENSE)
 
 ---
 
-<p align="center">
-  Built for SaaS founders
-</p>
+<div align="center">
+
+**Built for SaaS founders** · [basedpricer.com](https://basedpricer.com)
+
+</div>

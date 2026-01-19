@@ -1,0 +1,96 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main gradient background -->
+    <linearGradient id="mainBg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Accent gradient -->
+    <linearGradient id="accentGrad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle grid pattern -->
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#334155" stroke-width="0.5" stroke-opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#mainBg)"/>
+
+  <!-- Grid overlay -->
+  <rect width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+
+  <!-- Decorative circles -->
+  <circle cx="1000" cy="100" r="300" fill="#2563eb" fill-opacity="0.05"/>
+  <circle cx="200" cy="500" r="250" fill="#2563eb" fill-opacity="0.03"/>
+
+  <!-- Logo icon (scaled and positioned) -->
+  <g transform="translate(100, 215)">
+    <rect width="200" height="200" rx="36" fill="url(#accentGrad)" filter="url(#glow)"/>
+    <!-- Price bars -->
+    <rect x="44" y="44" width="25" height="112" rx="4" fill="white" fill-opacity="0.95"/>
+    <rect x="81" y="44" width="38" height="25" rx="4" fill="white" fill-opacity="0.6"/>
+    <rect x="81" y="81" width="50" height="25" rx="4" fill="white" fill-opacity="0.8"/>
+    <rect x="81" y="119" width="75" height="37" rx="4" fill="white"/>
+  </g>
+
+  <!-- Text content -->
+  <!-- Main title -->
+  <text x="340" y="270" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="72" font-weight="700" fill="#2563eb">based</text>
+  <text x="595" y="270" font-family="'JetBrains Mono', 'SF Mono', monospace" font-size="72" font-weight="700" fill="#64748b">pricer</text>
+
+  <!-- Tagline -->
+  <text x="340" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="#94a3b8">AI-Powered SaaS Pricing Calculator</text>
+
+  <!-- Feature pills -->
+  <g transform="translate(340, 370)">
+    <!-- Pill 1 -->
+    <rect x="0" y="0" width="180" height="44" rx="22" fill="#2563eb" fill-opacity="0.15"/>
+    <text x="90" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="500" fill="#60a5fa" text-anchor="middle">Codebase Analysis</text>
+
+    <!-- Pill 2 -->
+    <rect x="195" y="0" width="160" height="44" rx="22" fill="#2563eb" fill-opacity="0.15"/>
+    <text x="275" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="500" fill="#60a5fa" text-anchor="middle">Cost Calculator</text>
+
+    <!-- Pill 3 -->
+    <rect x="370" y="0" width="150" height="44" rx="22" fill="#2563eb" fill-opacity="0.15"/>
+    <text x="445" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="500" fill="#60a5fa" text-anchor="middle">Tier Designer</text>
+
+    <!-- Pill 4 -->
+    <rect x="535" y="0" width="175" height="44" rx="22" fill="#2563eb" fill-opacity="0.15"/>
+    <text x="622" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="500" fill="#60a5fa" text-anchor="middle">Report Generator</text>
+  </g>
+
+  <!-- Bottom tagline -->
+  <text x="340" y="490" font-family="system-ui, sans-serif" font-size="20" font-weight="400" fill="#64748b">Built for SaaS founders who want data-driven pricing</text>
+
+  <!-- Decorative price bars on right side -->
+  <g transform="translate(950, 180)" opacity="0.6">
+    <rect x="0" y="0" width="16" height="120" rx="4" fill="#2563eb" fill-opacity="0.3"/>
+    <rect x="26" y="30" width="16" height="90" rx="4" fill="#2563eb" fill-opacity="0.4"/>
+    <rect x="52" y="15" width="16" height="105" rx="4" fill="#2563eb" fill-opacity="0.5"/>
+    <rect x="78" y="45" width="16" height="75" rx="4" fill="#2563eb" fill-opacity="0.6"/>
+    <rect x="104" y="0" width="16" height="120" rx="4" fill="#2563eb" fill-opacity="0.7"/>
+    <rect x="130" y="20" width="16" height="100" rx="4" fill="#2563eb" fill-opacity="0.8"/>
+  </g>
+
+  <!-- Version badge -->
+  <g transform="translate(1050, 560)">
+    <rect x="0" y="0" width="100" height="30" rx="15" fill="#2563eb" fill-opacity="0.2"/>
+    <text x="50" y="20" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="500" fill="#60a5fa" text-anchor="middle">v1.0.0</text>
+  </g>
+</svg>

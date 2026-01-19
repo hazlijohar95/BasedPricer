@@ -1,5 +1,7 @@
 // Investor metrics calculations for SaaS valuation and milestones
 
+import { MARGIN_THRESHOLDS } from '../constants';
+
 export interface ValuationProjection {
   currentARR: number;
   valuationLow: number;   // 5x ARR
@@ -121,10 +123,11 @@ export function calculateBreakEvenTimeline(
 
 /**
  * Determine gross margin health status
+ * Uses centralized MARGIN_THRESHOLDS from constants
  */
 export function getGrossMarginHealth(grossMargin: number): 'healthy' | 'acceptable' | 'concerning' {
-  if (grossMargin >= 70) return 'healthy';
-  if (grossMargin >= 50) return 'acceptable';
+  if (grossMargin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
+  if (grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'concerning';
 }
 

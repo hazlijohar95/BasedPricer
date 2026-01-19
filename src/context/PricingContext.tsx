@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import {
   type VariableCostItem,
   type FixedCostItem,
@@ -12,6 +12,7 @@ import { features as defaultFeatures, type Feature } from '../data/features';
 import { type BusinessType, type PricingModelType, BUSINESS_TYPES } from '../data/business-types';
 import { getTierTemplatesForBusinessType, convertTemplatesToTiers } from '../data/tier-templates';
 import type { ToastData } from '../components/shared/Toast';
+import { DEFAULT_CURRENCY, type CurrencyCode } from '../constants';
 
 // ============================================================================
 // Types
@@ -41,6 +42,9 @@ export interface PricingState {
   customerCount: number;
   selectedPrice: number;
 
+  // Currency settings
+  currency: CurrencyCode;
+
   // Tier data
   tiers: Tier[];
 
@@ -58,6 +62,9 @@ export interface PricingState {
   businessType: BusinessType | null;
   businessTypeConfidence: number;
   pricingModelType: PricingModelType;
+
+  // First visit flag for onboarding
+  isFirstVisit: boolean;
 }
 
 export interface PricingContextValue extends PricingState {
@@ -116,15 +123,36 @@ export interface PricingContextValue extends PricingState {
   addTier: () => void;
   removeTier: (tierId: string) => void;
 
+  // Actions - Currency
+  setCurrency: (currency: CurrencyCode) => void;
+
+  // Actions - Onboarding
+  setIsFirstVisit: (isFirst: boolean) => void;
+  completeOnboarding: () => void;
+
   // Actions - Utility
   resetToDefaults: () => void;
   resetToEmpty: () => void;
   loadPreset: (preset: { variableCosts: VariableCostItem[]; fixedCosts: FixedCostItem[] }) => void;
 
+  // Actions - Project Management
+  currentProjectName: string;
+  listProjects: () => string[];
+  saveProject: (name: string) => void;
+  loadProject: (name: string) => boolean;
+  deleteProject: (name: string) => void;
+  renameProject: (newName: string) => void;
+
   // Toast system
   toasts: ToastData[];
   showToast: (type: 'success' | 'error' | 'info', message: string, duration?: number) => void;
   dismissToast: (id: string) => void;
+
+  // Undo/Redo
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 }
 
 // ============================================================================
@@ -234,6 +262,7 @@ const DEFAULT_STATE: PricingState = {
   fixedCosts: COST_PRESETS['ai-saas'].fixedCosts,
   customerCount: 200,
   selectedPrice: 25,
+  currency: DEFAULT_CURRENCY,
   tiers: defaultTiers,
   features: defaultFeatures,
   tierDisplayConfigs: createTierDisplayConfigsFromTiers(defaultTiers),
@@ -247,6 +276,7 @@ const DEFAULT_STATE: PricingState = {
   businessType: null,
   businessTypeConfidence: 0,
   pricingModelType: 'feature_tiered',
+  isFirstVisit: true, // Will be checked against localStorage
 };
 
 // Empty state for fresh start
@@ -320,6 +350,8 @@ const EMPTY_STATE: PricingState = {
   businessType: null,
   businessTypeConfidence: 0,
   pricingModelType: 'feature_tiered',
+  currency: DEFAULT_CURRENCY,
+  isFirstVisit: false, // Empty state means user chose to start fresh
 };
 
 // ============================================================================
@@ -327,6 +359,10 @@ const EMPTY_STATE: PricingState = {
 // ============================================================================
 
 const STORAGE_KEY = 'cynco-pricing-state';
+const PROJECTS_INDEX_KEY = 'cynco-projects';
+const PROJECT_PREFIX = 'cynco-project-';
+const CURRENT_PROJECT_KEY = 'cynco-current-project';
+const DEFAULT_PROJECT_NAME = 'My SaaS Product';
 
 function loadFromStorage(): Partial<PricingState> | null {
   try {
@@ -348,6 +384,72 @@ function saveToStorage(state: PricingState): void {
   }
 }
 
+// Project management helpers
+function getProjectsList(): string[] {
+  try {
+    const stored = localStorage.getItem(PROJECTS_INDEX_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProjectsList(projects: string[]): void {
+  try {
+    localStorage.setItem(PROJECTS_INDEX_KEY, JSON.stringify(projects));
+  } catch (e) {
+    console.warn('Failed to save projects list:', e);
+  }
+}
+
+function saveProjectData(name: string, state: PricingState): void {
+  try {
+    localStorage.setItem(PROJECT_PREFIX + name, JSON.stringify(state));
+    // Update projects list if not already included
+    const projects = getProjectsList();
+    if (!projects.includes(name)) {
+      saveProjectsList([...projects, name]);
+    }
+  } catch (e) {
+    console.warn('Failed to save project:', e);
+  }
+}
+
+function loadProjectData(name: string): Partial<PricingState> | null {
+  try {
+    const stored = localStorage.getItem(PROJECT_PREFIX + name);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function deleteProjectData(name: string): void {
+  try {
+    localStorage.removeItem(PROJECT_PREFIX + name);
+    const projects = getProjectsList().filter(p => p !== name);
+    saveProjectsList(projects);
+  } catch (e) {
+    console.warn('Failed to delete project:', e);
+  }
+}
+
+function getCurrentProjectName(): string {
+  try {
+    return localStorage.getItem(CURRENT_PROJECT_KEY) || DEFAULT_PROJECT_NAME;
+  } catch {
+    return DEFAULT_PROJECT_NAME;
+  }
+}
+
+function setCurrentProjectNameStorage(name: string): void {
+  try {
+    localStorage.setItem(CURRENT_PROJECT_KEY, name);
+  } catch (e) {
+    console.warn('Failed to save current project name:', e);
+  }
+}
+
 // ============================================================================
 // Context
 // ============================================================================
@@ -358,11 +460,87 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   // Initialize state from localStorage or defaults
   const [state, setState] = useState<PricingState>(() => {
     const stored = loadFromStorage();
-    return stored ? { ...DEFAULT_STATE, ...stored } : DEFAULT_STATE;
+    const onboardingComplete = localStorage.getItem('cynco-onboarding-complete') === 'true';
+
+    // If we have stored data, user has used the app before
+    // Also check if onboarding was explicitly completed
+    const isFirstVisit = !stored && !onboardingComplete;
+
+    if (stored) {
+      return {
+        ...DEFAULT_STATE,
+        ...stored,
+        isFirstVisit,
+        currency: stored.currency || DEFAULT_CURRENCY,
+      };
+    }
+
+    return {
+      ...DEFAULT_STATE,
+      isFirstVisit,
+    };
   });
 
   // Toast state (not persisted)
   const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  // Project name state
+  const [currentProjectName, setCurrentProjectName] = useState<string>(() => getCurrentProjectName());
+
+  // Undo/Redo history (not persisted)
+  // Using a version counter instead of boolean flag to handle rapid state changes
+  const HISTORY_LIMIT = 50;
+  const [history, setHistory] = useState<PricingState[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const undoRedoVersion = useRef(0);
+  const lastProcessedVersion = useRef(0);
+
+  // Track state changes for undo/redo (skip if this is an undo/redo action itself)
+  useEffect(() => {
+    // If version changed, this state change came from undo/redo - skip it
+    if (undoRedoVersion.current !== lastProcessedVersion.current) {
+      lastProcessedVersion.current = undoRedoVersion.current;
+      return;
+    }
+
+    // Add current state to history
+    setHistory(prev => {
+      // If we're not at the end of history, truncate future states
+      const newHistory = prev.slice(0, historyIndex + 1);
+      // Add new state
+      newHistory.push(state);
+      // Limit history size
+      if (newHistory.length > HISTORY_LIMIT) {
+        return newHistory.slice(-HISTORY_LIMIT);
+      }
+      return newHistory;
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, HISTORY_LIMIT - 1));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      // Increment version to signal this is an undo action
+      undoRedoVersion.current += 1;
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setState(history[newIndex]);
+    }
+  }, [history, historyIndex]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      // Increment version to signal this is a redo action
+      undoRedoVersion.current += 1;
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setState(history[newIndex]);
+    }
+  }, [history, historyIndex]);
 
   // Save to localStorage on state change
   useEffect(() => {
@@ -457,10 +635,20 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   // -------------------------------------------------------------------------
 
   const setCustomerCount = useCallback((count: number) => {
-    setState(prev => ({ ...prev, customerCount: Math.max(1, count) }));
+    // Validate input is a finite positive number
+    if (!Number.isFinite(count) || count < 1) {
+      console.warn(`setCustomerCount: Invalid count ${count}, using minimum of 1`);
+      count = 1;
+    }
+    setState(prev => ({ ...prev, customerCount: Math.floor(Math.max(1, count)) }));
   }, []);
 
   const setSelectedPrice = useCallback((price: number) => {
+    // Validate input is a finite non-negative number
+    if (!Number.isFinite(price) || price < 0) {
+      console.warn(`setSelectedPrice: Invalid price ${price}, using 0`);
+      price = 0;
+    }
     setState(prev => ({ ...prev, selectedPrice: Math.max(0, price) }));
   }, []);
 
@@ -547,10 +735,25 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeFeature = useCallback((featureId: string) => {
-    setState(prev => ({
-      ...prev,
-      features: prev.features.filter(feature => feature.id !== featureId),
-    }));
+    setState(prev => {
+      // Remove the feature from the features array
+      const updatedFeatures = prev.features.filter(feature => feature.id !== featureId);
+
+      // Cascade cleanup: remove the feature from all tier references
+      const updatedTiers = prev.tiers.map(tier => ({
+        ...tier,
+        includedFeatures: tier.includedFeatures.filter(id => id !== featureId),
+        excludedFeatures: tier.excludedFeatures.filter(id => id !== featureId),
+        highlightFeatures: tier.highlightFeatures.filter(id => id !== featureId),
+        limits: tier.limits.filter(limit => limit.featureId !== featureId),
+      }));
+
+      return {
+        ...prev,
+        features: updatedFeatures,
+        tiers: updatedTiers,
+      };
+    });
   }, []);
 
   const importCodebaseFeatures = useCallback((newFeatures: Feature[]) => {
@@ -609,17 +812,23 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   // -------------------------------------------------------------------------
 
   const setTierCount = useCallback((count: number) => {
+    // Validate count is a positive integer
+    if (!Number.isInteger(count) || count < 0) {
+      console.warn(`setTierCount: Invalid count ${count}, must be a non-negative integer`);
+      return;
+    }
+
     setState(prev => {
       const currentCount = prev.tiers.length;
       if (count === currentCount) return prev;
 
       if (count > currentCount) {
-        // Add tiers - use single timestamp base to avoid ID collision in fast loops
-        const baseTimestamp = Date.now();
+        // Add tiers - use timestamp + random suffix to avoid ID collision
         const newTiers = [...prev.tiers];
         for (let i = currentCount; i < count; i++) {
+          const uniqueId = `tier-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           newTiers.push({
-            id: `tier-${baseTimestamp}-${i}`,
+            id: uniqueId,
             name: `Tier ${i + 1}`,
             tagline: 'New tier',
             targetAudience: 'Describe target audience',
@@ -647,7 +856,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       tiers: [
         ...prev.tiers,
         {
-          id: `tier-${Date.now()}`,
+          id: `tier-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: `Tier ${prev.tiers.length + 1}`,
           tagline: 'New tier',
           targetAudience: 'Describe target audience',
@@ -669,6 +878,27 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       ...prev,
       tiers: prev.tiers.filter(t => t.id !== tierId),
     }));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Actions - Currency
+  // -------------------------------------------------------------------------
+
+  const setCurrency = useCallback((currency: CurrencyCode) => {
+    setState(prev => ({ ...prev, currency }));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Actions - Onboarding
+  // -------------------------------------------------------------------------
+
+  const setIsFirstVisit = useCallback((isFirst: boolean) => {
+    setState(prev => ({ ...prev, isFirstVisit: isFirst }));
+  }, []);
+
+  const completeOnboarding = useCallback(() => {
+    setState(prev => ({ ...prev, isFirstVisit: false }));
+    localStorage.setItem('cynco-onboarding-complete', 'true');
   }, []);
 
   // -------------------------------------------------------------------------
@@ -706,6 +936,55 @@ export function PricingProvider({ children }: { children: ReactNode }) {
 
   const dismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Actions - Project Management
+  // -------------------------------------------------------------------------
+
+  const listProjects = useCallback((): string[] => {
+    return getProjectsList();
+  }, []);
+
+  const saveProject = useCallback((name: string) => {
+    saveProjectData(name, state);
+    setCurrentProjectName(name);
+    setCurrentProjectNameStorage(name);
+    showToast('success', `Project "${name}" saved`);
+  }, [state, showToast]);
+
+  const loadProject = useCallback((name: string): boolean => {
+    const projectData = loadProjectData(name);
+    if (projectData) {
+      setState({
+        ...DEFAULT_STATE,
+        ...projectData,
+        isFirstVisit: false,
+      });
+      setCurrentProjectName(name);
+      setCurrentProjectNameStorage(name);
+      showToast('success', `Project "${name}" loaded`);
+      return true;
+    }
+    showToast('error', `Project "${name}" not found`);
+    return false;
+  }, [showToast]);
+
+  const deleteProject = useCallback((name: string) => {
+    deleteProjectData(name);
+    // If deleting current project, reset to default name
+    if (currentProjectName === name) {
+      setCurrentProjectName(DEFAULT_PROJECT_NAME);
+      setCurrentProjectNameStorage(DEFAULT_PROJECT_NAME);
+    }
+    showToast('info', `Project "${name}" deleted`);
+  }, [currentProjectName, showToast]);
+
+  const renameProject = useCallback((newName: string) => {
+    if (newName && newName.trim()) {
+      setCurrentProjectName(newName.trim());
+      setCurrentProjectNameStorage(newName.trim());
+    }
   }, []);
 
   // -------------------------------------------------------------------------
@@ -749,13 +1028,28 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     setTierCount,
     addTier,
     removeTier,
+    setCurrency,
+    setIsFirstVisit,
+    completeOnboarding,
     resetToDefaults,
     resetToEmpty,
     loadPreset,
+    // Project Management
+    currentProjectName,
+    listProjects,
+    saveProject,
+    loadProject,
+    deleteProject,
+    renameProject,
     // Toast
     toasts,
     showToast,
     dismissToast,
+    // Undo/Redo
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   }), [
     state,
     costs,
@@ -792,11 +1086,24 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     setTierCount,
     addTier,
     removeTier,
+    setCurrency,
+    setIsFirstVisit,
+    completeOnboarding,
     resetToDefaults,
     resetToEmpty,
     loadPreset,
+    currentProjectName,
+    listProjects,
+    saveProject,
+    loadProject,
+    deleteProject,
+    renameProject,
     showToast,
     dismissToast,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   ]);
 
   return (

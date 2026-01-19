@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { CurrencyDollar, TrendUp, Percent, ChartBar, Warning, CheckCircle } from '@phosphor-icons/react';
 import type { ReportData } from '../../utils/reportEncoder';
+import { MARGIN_THRESHOLDS } from '../../constants';
 
 interface AccountantReportProps {
   reportData: ReportData;
@@ -32,7 +33,7 @@ export function AccountantReport({ reportData }: AccountantReportProps) {
   const profit = state.selectedPrice - costs.totalCOGS;
 
   // Get margin status
-  const marginStatus = margin >= 70 ? 'great' : margin >= 50 ? 'ok' : 'low';
+  const marginStatus = margin >= MARGIN_THRESHOLDS.HEALTHY ? 'great' : margin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'ok' : 'low';
 
   // Calculate MRR and ARR
   const mrr = state.selectedPrice * state.customerCount;

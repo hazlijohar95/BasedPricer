@@ -485,7 +485,7 @@ export function CodebaseAnalyzer() {
           )}
 
           {rateLimit && (
-            <p className="mt-3 text-xs text-gray-400">
+            <p className="mt-3 text-xs text-gray-500">
               GitHub API: {rateLimit.remaining}/{rateLimit.limit} requests remaining
             </p>
           )}
@@ -543,11 +543,30 @@ export function CodebaseAnalyzer() {
         {showKeySettings && (
           <div className="border-t border-gray-200">
             {/* Enhanced Privacy Notice */}
-            <div className="px-6 py-3 bg-blue-50/50 border-b border-blue-100/50 flex items-center gap-2">
-              <ShieldCheck size={14} weight="duotone" className="text-blue-600" />
-              <p className="text-xs text-blue-700">
-                Keys are stored locally in your browser and sent directly to providers. We never see or log them.
-              </p>
+            <div className="px-6 py-4 bg-blue-50/50 border-b border-blue-100/50">
+              <div className="flex items-start gap-3">
+                <ShieldCheck size={18} weight="duotone" className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-blue-800">Your API keys are secure</p>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-blue-400" />
+                      Stored locally in your browser's localStorage - never sent to our servers
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-blue-400" />
+                      Sent directly to AI providers (OpenAI, Anthropic, etc.) via HTTPS
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-blue-400" />
+                      Keys are deleted immediately when you click "Remove"
+                    </li>
+                  </ul>
+                  <p className="text-[10px] text-blue-600 pt-1">
+                    Tip: Use API keys with spending limits for additional protection.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {keyError && (
@@ -863,7 +882,7 @@ export function CodebaseAnalyzer() {
             <div className="flex-1">
               <h3 className="text-sm font-medium text-red-900">Analysis Failed</h3>
               <p className="text-sm text-red-700 mt-1">{analysisError}</p>
-              <div className="flex items-center gap-3 mt-3">
+              <div className="flex items-center gap-3 mt-4">
                 <button
                   onClick={handleAnalyze}
                   className="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors"
@@ -876,11 +895,20 @@ export function CodebaseAnalyzer() {
                     setAnalysisError(null);
                     setShowKeySettings(true);
                   }}
-                  className="text-sm text-red-600 hover:text-red-800 underline"
+                  className="px-4 py-2 bg-white border border-red-200 text-red-700 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
                 >
                   Check API Settings
                 </button>
+                <button
+                  onClick={() => navigateTo('cogs')}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Continue Manually
+                </button>
               </div>
+              <p className="text-xs text-red-500 mt-3">
+                You can still add costs and features manually in the COGS Calculator and Feature Inventory.
+              </p>
             </div>
           </div>
         </div>

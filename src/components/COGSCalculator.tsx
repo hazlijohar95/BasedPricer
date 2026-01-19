@@ -54,7 +54,8 @@ export function COGSCalculator() {
 
   // Add new variable cost
   const addVariableCost = () => {
-    const newId = `var-${Date.now()}`;
+    // Use timestamp + random suffix to prevent ID collisions
+    const newId = `var-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newCost: VariableCostItem = {
       id: newId,
       name: 'New cost item',
@@ -69,7 +70,8 @@ export function COGSCalculator() {
 
   // Add new fixed cost
   const addFixedCost = () => {
-    const newId = `fix-${Date.now()}`;
+    // Use timestamp + random suffix to prevent ID collisions
+    const newId = `fix-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newCost: FixedCostItem = {
       id: newId,
       name: 'New fixed cost',
@@ -85,7 +87,7 @@ export function COGSCalculator() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">COGS Calculator</h1>
-          <p className="text-gray-400 text-sm mt-1">Build your cost model to find the right price</p>
+          <p className="text-gray-500 text-sm mt-1">Build your cost model to find the right price</p>
         </div>
       </div>
 
@@ -147,7 +149,15 @@ export function COGSCalculator() {
         </div>
         {showRealisticUsage && (
           <div className="flex items-center gap-3">
-            <Gauge size={16} weight="duotone" className="text-gray-400" />
+            <div className="flex items-center gap-1.5 group relative">
+              <Gauge size={16} weight="duotone" className="text-gray-400" />
+              <span className="text-xs text-gray-500">Avg. usage</span>
+              <Info size={12} className="text-gray-300 cursor-help" />
+              <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                <p className="font-medium mb-1">Average Usage Rate</p>
+                <p className="text-gray-300">Accounts for the fact that most customers don't use 100% of their allocated resources. Lower values mean lower actual costs per customer.</p>
+              </div>
+            </div>
             <input
               type="range"
               min="0.1"
@@ -167,7 +177,7 @@ export function COGSCalculator() {
         {/* COGS Result */}
         <div className="col-span-2 bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-400 text-sm">Your cost per customer / month</p>
+            <p className="text-gray-500 text-sm">Your cost per customer / month</p>
             {showRealisticUsage && (
               <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded">
                 @ {(utilizationRate * 100).toFixed(0)}% utilization
@@ -222,7 +232,7 @@ export function COGSCalculator() {
               />
               <div className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-gray-400 rounded-full" style={{ left: '70%' }} />
             </div>
-            <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+            <div className="flex justify-between text-[10px] text-gray-500 mt-2">
               <span>0%</span>
               <span className="text-gray-500 font-medium">70%</span>
               <span>100%</span>
@@ -241,7 +251,7 @@ export function COGSCalculator() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-medium text-gray-900">Variable Costs</h3>
-              <p className="text-xs text-gray-400">Costs that scale with usage (per customer/month)</p>
+              <p className="text-xs text-gray-500">Costs that scale with usage (per customer/month)</p>
             </div>
             <button
               onClick={addVariableCost}
@@ -254,7 +264,7 @@ export function COGSCalculator() {
 
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 uppercase tracking-wide px-2">
+            <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-500 uppercase tracking-wide px-2">
               <div className="col-span-3">Cost item</div>
               <div className="col-span-2 text-right">Usage</div>
               <div className="col-span-2">Unit</div>
@@ -330,7 +340,7 @@ export function COGSCalculator() {
             <div className="flex justify-between items-center pt-3 mt-2 border-t border-gray-200 px-2">
               <span className="text-sm font-medium text-gray-700">
                 Total variable per customer
-                {showRealisticUsage && <span className="text-xs text-gray-400 ml-1">@ {(utilizationRate * 100).toFixed(0)}%</span>}
+                {showRealisticUsage && <span className="text-xs text-gray-500 ml-1">@ {(utilizationRate * 100).toFixed(0)}%</span>}
               </span>
               <span className="text-sm font-semibold text-[#253ff6]">MYR {displayCosts.variableTotal.toFixed(2)}</span>
             </div>
@@ -344,7 +354,7 @@ export function COGSCalculator() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Fixed Costs</h3>
-                <p className="text-xs text-gray-400">Monthly infrastructure</p>
+                <p className="text-xs text-gray-500">Monthly infrastructure</p>
               </div>
               <button
                 onClick={addFixedCost}
@@ -402,7 +412,7 @@ export function COGSCalculator() {
                 onChange={(e) => setCustomerCount(Number(e.target.value))}
                 className="w-full h-1 bg-gray-100 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gray-400 [&::-webkit-slider-thumb]:cursor-pointer"
               />
-              <p className="text-[10px] text-gray-400 mt-1">Fixed ÷ customers = MYR {costs.fixedPerCustomer.toFixed(2)}/ea</p>
+              <p className="text-[10px] text-gray-500 mt-1">Fixed ÷ customers = MYR {costs.fixedPerCustomer.toFixed(2)}/ea</p>
             </div>
           </div>
 

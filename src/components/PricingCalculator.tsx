@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Gauge, ChartLineUp, Trophy, Rocket } from '@phosphor-icons/react';
 import { calculateTierVariableCosts } from '../data/tiers';
 import { usePricing } from '../context/PricingContext';
@@ -15,6 +15,7 @@ import {
   PriceSensitivityTable,
   type Scenario,
 } from './pricing';
+import { MARGIN_THRESHOLDS } from '../constants';
 
 type TierKey = 'freemium' | 'basic' | 'pro' | 'enterprise';
 
@@ -32,6 +33,7 @@ export function PricingCalculator() {
     utilizationRate,
     setUtilizationRate,
     variableCosts,
+    updateTier,
   } = usePricing();
 
   // Derive cost rates from context's variableCosts (single source of truth)
@@ -40,12 +42,14 @@ export function PricingCalculator() {
     return deriveCostRatesFromVariableCosts(variableCosts);
   }, [variableCosts]);
 
-  // Get initial prices from context tiers
-  const getInitialPrices = useCallback((): Record<TierKey, number> => {
+  // Derive prices directly from context tiers (single source of truth)
+  // No local state duplication - prices come from tiers context
+  const prices = useMemo((): Record<TierKey, number> => {
     const tierPrices: Record<TierKey, number> = { freemium: 0, basic: 25, pro: 78, enterprise: 500 };
     tiers.forEach(tier => {
       const key = tier.id as TierKey;
-      if (tier.monthlyPriceMYR > 0) {
+      // Use tier price if set, otherwise use defaults
+      if (key in tierPrices) {
         tierPrices[key] = tier.monthlyPriceMYR;
       }
     });
@@ -54,22 +58,7 @@ export function PricingCalculator() {
 
   const [scenario, setScenario] = useState<Scenario>(scenarios[0]);
   const [totalCustomers, setTotalCustomers] = useState(100);
-  const [prices, setPrices] = useState<Record<TierKey, number>>(() => getInitialPrices());
   const [monthlyGrowthRate, setMonthlyGrowthRate] = useState(5); // Default 5% monthly growth
-
-  // Sync prices when tiers change in context (e.g., user edits prices in Tier Configurator)
-  // This is intentional: we need to sync derived state from context
-  useEffect(() => {
-    const newPrices = getInitialPrices();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPrices(prev => {
-      // Only update if prices actually changed in context
-      const hasChanges = Object.entries(newPrices).some(
-        ([key, value]) => prev[key as TierKey] !== value
-      );
-      return hasChanges ? newPrices : prev;
-    });
-  }, [getInitialPrices]);
 
   // Use fixed costs from context
   const monthlyFixedCostsTotal = cogsData.fixedTotal;
@@ -170,6 +159,10 @@ export function PricingCalculator() {
     // Per-user freemium cost for analysis
     const freemiumCostPerUser = counts.freemium > 0 ? freemiumCosts / counts.freemium : 0;
 
+    // Freemium conversion projections
+    const monthlyConversions = counts.freemium * (scenario.conversionRate / 100);
+    const projectedMrrGrowth = monthlyConversions * arpu;
+
     return {
       grossProfit,
       grossMargin,
@@ -182,14 +175,16 @@ export function PricingCalculator() {
       breakEvenCustomers,
       freemiumCosts, // Total freemium subsidy for transparency
       freemiumCostPerUser, // Cost per freemium user for analysis
+      monthlyConversions, // Expected monthly conversions from freemium
+      projectedMrrGrowth, // Projected MRR growth from conversions
     };
-  }, [totalMRR, totalVariableCosts, totalCosts, counts, revenue, tierVariableCosts, scenario.monthlyChurnRate, monthlyFixedCostsTotal]);
+  }, [totalMRR, totalVariableCosts, totalCosts, counts, revenue, tierVariableCosts, scenario.monthlyChurnRate, monthlyFixedCostsTotal, scenario.conversionRate]);
 
   // Destructure for easier access in JSX
   const {
     grossProfit, grossMargin, operatingProfit, operatingMargin,
     paidCustomers, arpu, ltv, contributionMargin, breakEvenCustomers,
-    freemiumCosts, freemiumCostPerUser
+    freemiumCosts, freemiumCostPerUser, monthlyConversions, projectedMrrGrowth
   } = metrics;
 
   // Calculate investor metrics for valuation, milestones, and break-even timeline
@@ -226,10 +221,14 @@ export function PricingCalculator() {
     }));
   }, []);
 
-  // Memoized handler for price changes
+  // Handler for price changes - updates context directly
   const handlePriceChange = useCallback((tier: TierKey, value: number) => {
-    setPrices(prev => ({ ...prev, [tier]: Math.max(0, value) }));
-  }, []);
+    // Find the tier and update its price in context
+    const tierToUpdate = tiers.find(t => t.id === tier);
+    if (tierToUpdate) {
+      updateTier(tier, { monthlyPriceMYR: Math.max(0, value) });
+    }
+  }, [tiers, updateTier]);
 
   // Memoized handler for scenario field changes
   const handleScenarioChange = useCallback((field: 'monthlyChurnRate' | 'conversionRate', value: number) => {
@@ -254,8 +253,8 @@ export function PricingCalculator() {
         testGrossProfit,
         testOperatingProfit,
         testGrossMargin,
-        isHealthy: testGrossMargin >= 70,
-        isAcceptable: testGrossMargin >= 50,
+        isHealthy: testGrossMargin >= MARGIN_THRESHOLDS.HEALTHY,
+        isAcceptable: testGrossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE,
         isCurrent: price === prices.basic,
       };
     }),
@@ -375,7 +374,7 @@ export function PricingCalculator() {
               />
               <span className="w-12 text-sm font-mono text-gray-700">{(utilizationRate * 100).toFixed(0)}%</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">How much of limits customers actually use</p>
+            <p className="text-xs text-gray-500 mt-1">How much of limits customers actually use</p>
           </div>
           <div>
             <label className="text-sm text-gray-600">Monthly Churn Rate</label>
@@ -391,7 +390,7 @@ export function PricingCalculator() {
               />
               <span className="text-sm text-gray-500">% per month</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               = {((1 - Math.pow(1 - scenario.monthlyChurnRate/100, 12)) * 100).toFixed(0)}% annual churn
             </p>
           </div>
@@ -407,9 +406,14 @@ export function PricingCalculator() {
                 onChange={(e) => handleScenarioChange('conversionRate', Number(e.target.value))}
                 className="input-field w-20 text-center"
               />
-              <span className="text-sm text-gray-500">%</span>
+              <span className="text-sm text-gray-500">% monthly</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Free to paid conversion</p>
+            <p className="text-xs text-gray-500 mt-1">
+              = ~{Math.round(monthlyConversions)} conversions/mo
+              {projectedMrrGrowth > 0 && (
+                <span className="text-emerald-600"> (+MYR {projectedMrrGrowth.toFixed(0)} MRR)</span>
+              )}
+            </p>
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-2">
@@ -428,7 +432,7 @@ export function PricingCalculator() {
               />
               <span className="text-sm text-gray-500">%</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               = {((Math.pow(1 + monthlyGrowthRate/100, 12) - 1) * 100).toFixed(0)}% annual growth
             </p>
           </div>
@@ -459,7 +463,7 @@ export function PricingCalculator() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
                     {counts[tier]} × MYR {prices[tier]} = {pct.toFixed(1)}%
                   </p>
                 </div>
@@ -474,14 +478,14 @@ export function PricingCalculator() {
             <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
               <div>
                 <p className="text-sm font-medium text-gray-700">Variable Costs</p>
-                <p className="text-xs text-gray-400">AI, Storage, Email @ {(utilizationRate * 100).toFixed(0)}% utilization</p>
+                <p className="text-xs text-gray-500">AI, Storage, Email @ {(utilizationRate * 100).toFixed(0)}% utilization</p>
               </div>
               <span className="font-mono text-sm text-gray-600">MYR {totalVariableCosts.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
               <div>
                 <p className="text-sm font-medium text-gray-700">Fixed Costs</p>
-                <p className="text-xs text-gray-400">Infrastructure</p>
+                <p className="text-xs text-gray-500">Infrastructure</p>
               </div>
               <span className="font-mono text-sm text-gray-600">MYR {monthlyFixedCostsTotal.toFixed(2)}</span>
             </div>
@@ -514,7 +518,48 @@ export function PricingCalculator() {
         contributionMargin={contributionMargin}
         freemiumCosts={freemiumCosts}
         freemiumCostPerUser={freemiumCostPerUser}
+        fixedCosts={monthlyFixedCostsTotal}
       />
+
+      {/* Freemium Conversion Pipeline */}
+      {counts.freemium > 0 && (
+        <div className="card p-6 bg-gradient-to-br from-emerald-50/50 to-white border-emerald-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Rocket size={20} weight="duotone" className="text-emerald-600" />
+            <h3 className="font-medium text-gray-900">Freemium Conversion Pipeline</h3>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="p-4 bg-white rounded-[0.2rem] border border-emerald-200">
+              <p className="text-sm text-gray-500">Freemium Pool</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{counts.freemium.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">Free tier users</p>
+            </div>
+            <div className="p-4 bg-white rounded-[0.2rem] border border-emerald-200">
+              <p className="text-sm text-gray-500">Monthly Conversions</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">~{Math.round(monthlyConversions)}</p>
+              <p className="text-xs text-gray-500 mt-1">@ {scenario.conversionRate}% rate</p>
+            </div>
+            <div className="p-4 bg-emerald-50 rounded-[0.2rem] border border-emerald-200">
+              <p className="text-sm text-emerald-600 font-medium">MRR Growth Potential</p>
+              <p className="text-2xl font-bold text-emerald-700 font-mono mt-1">
+                +MYR {projectedMrrGrowth.toFixed(0)}
+              </p>
+              <p className="text-xs text-emerald-500 mt-1">From conversions × ARPU</p>
+            </div>
+            <div className="p-4 bg-white rounded-[0.2rem] border border-emerald-200">
+              <p className="text-sm text-gray-500">Annual Growth Impact</p>
+              <p className="text-2xl font-bold text-gray-900 font-mono mt-1">
+                +MYR {(projectedMrrGrowth * 12).toFixed(0)}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Projected ARR increase</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-4 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Based on {counts.freemium.toLocaleString()} freemium users converting at {scenario.conversionRate}% monthly rate with ARPU of MYR {arpu.toFixed(0)}
+          </p>
+        </div>
+      )}
 
       {/* Investor Metrics */}
       <div className="card p-6 bg-gradient-to-br from-violet-50/50 to-white border-violet-200">
@@ -530,7 +575,7 @@ export function PricingCalculator() {
             <p className="text-2xl font-bold text-gray-900 font-mono mt-1">
               {formatCurrency(investorMetrics.arr)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">MRR × 12</p>
+            <p className="text-xs text-gray-500 mt-1">MRR × 12</p>
           </div>
           <div className="col-span-2 p-4 bg-violet-50 rounded-[0.2rem] border border-violet-200">
             <p className="text-sm text-violet-600 font-medium">Valuation Range (SaaS Multiples)</p>
@@ -556,7 +601,7 @@ export function PricingCalculator() {
                investorMetrics.grossMarginHealth === 'acceptable' ? '◐ OK' :
                '✗ Low'}
             </p>
-            <p className="text-xs text-gray-400 mt-1">{grossMargin.toFixed(0)}% gross margin</p>
+            <p className="text-xs text-gray-500 mt-1">{grossMargin.toFixed(0)}% gross margin</p>
           </div>
         </div>
 
@@ -600,7 +645,7 @@ export function PricingCalculator() {
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-sm font-medium text-gray-700">Break-even Timeline</h4>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-500 mt-0.5">
                 {investorMetrics.customersToBreakEven > 0
                   ? `Need ${investorMetrics.customersToBreakEven} more paid customers to break even`
                   : 'Already at break-even!'}
@@ -614,10 +659,10 @@ export function PricingCalculator() {
                   }`}>
                     {investorMetrics.monthsToBreakEven === 0 ? 'Now' : `${investorMetrics.monthsToBreakEven} mo`}
                   </p>
-                  <p className="text-xs text-gray-400">@ {monthlyGrowthRate}% monthly growth</p>
+                  <p className="text-xs text-gray-500">@ {monthlyGrowthRate}% monthly growth</p>
                 </>
               ) : (
-                <p className="text-sm text-gray-400">Set growth rate to calculate</p>
+                <p className="text-sm text-gray-500">Set growth rate to calculate</p>
               )}
             </div>
           </div>
@@ -631,7 +676,7 @@ export function PricingCalculator() {
                   }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
                 <span>{paidCustomers} current</span>
                 <span>{breakEvenCustomers} break-even</span>
               </div>

@@ -18,10 +18,13 @@ import {
 } from '@phosphor-icons/react';
 import { PricingProvider, usePricing } from './context/PricingContext';
 import { NavigationProvider, useNavigation, type Tab } from './context/NavigationContext';
-import { ToastContainer } from './components/shared';
+import { ToastContainer, OnboardingModal, ProjectManager } from './components/shared';
 import { Logo } from './components/brand';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SkeletonPage } from './components/shared/Skeleton';
+import { MARGIN_THRESHOLDS, getMarginStyleFromThreshold } from './constants';
+import { useEscapeKey, useFocusTrap, useUndoRedo } from './hooks';
+import { ArrowCounterClockwise, ArrowClockwise } from '@phosphor-icons/react';
 
 // Lazy-loaded components for code splitting (reduces initial bundle size)
 const FeatureInventory = lazy(() => import('./components/FeatureInventory').then(m => ({ default: m.FeatureInventory })));
@@ -54,19 +57,59 @@ const tabs: { id: Tab; label: string; icon: typeof House }[] = [
 
 function MainApp() {
   const { activeTab, navigateTo } = useNavigation();
-  const { toasts, dismissToast } = usePricing();
+  const { toasts, dismissToast, canUndo, canRedo, undo, redo } = usePricing();
+
+  // Enable keyboard shortcuts for undo/redo
+  useUndoRedo({ onUndo: undo, onRedo: redo, canUndo, canRedo });
   const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reportGeneratorOpen, setReportGeneratorOpen] = useState(false);
+
+  // Close mobile menu when tab changes
+  const handleNavigate = (tab: Tab) => {
+    navigateTo(tab);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen">
-      {/* Sidebar */}
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-[#e4e4e4] z-50 flex items-center justify-between px-4">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Toggle menu"
+        >
+          <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {mobileMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
+        <Logo size="sm" variant="full" />
+        <div className="w-10" /> {/* Spacer for centering */}
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/20 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Desktop: hover expand, Mobile: slide overlay */}
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
-        className={`fixed left-0 top-0 h-full bg-white border-r border-[#e4e4e4] z-50 flex flex-col transition-all duration-300 ease-in-out ${
-          sidebarHovered ? 'w-56' : 'w-16'
-        }`}
+        className={`fixed left-0 top-0 h-full bg-white border-r border-[#e4e4e4] z-50 flex flex-col transition-all duration-300 ease-in-out
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          ${sidebarHovered ? 'md:w-56' : 'md:w-16'}
+          w-64
+        `}
       >
         {/* Logo */}
         <div className={`border-b border-[#e4e4e4] transition-all duration-300 ${sidebarHovered ? 'p-4' : 'p-3'}`}>
@@ -85,19 +128,19 @@ function MainApp() {
               return (
                 <li key={tab.id}>
                   <button
-                    onClick={() => navigateTo(tab.id)}
-                    className={`w-full flex items-center gap-3 rounded-[0.2rem] transition-all duration-200 ${
-                      sidebarHovered ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'
-                    } ${
-                      activeTab === tab.id
+                    onClick={() => handleNavigate(tab.id)}
+                    className={`w-full flex items-center gap-3 rounded-[0.2rem] transition-all duration-200
+                      px-3 py-2.5
+                      ${!sidebarHovered ? 'md:px-0 md:justify-center' : ''}
+                      ${activeTab === tab.id
                         ? 'bg-brand-subtle text-brand-primary'
                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <Icon size={20} weight="duotone" className="flex-shrink-0" />
-                    <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                      sidebarHovered ? 'opacity-100 w-auto' : 'opacity-0 w-0'
-                    }`}>
+                    <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+                      ${sidebarHovered ? 'md:opacity-100 md:w-auto' : 'md:opacity-0 md:w-0'}
+                    `}>
                       {tab.label}
                     </span>
                   </button>
@@ -108,17 +151,21 @@ function MainApp() {
         </nav>
 
         {/* Generate Reports Button */}
-        <div className={`border-t border-[#e4e4e4] transition-all duration-300 ${sidebarHovered ? 'p-3' : 'p-2'}`}>
+        <div className={`border-t border-[#e4e4e4] transition-all duration-300 p-3 ${!sidebarHovered ? 'md:p-2' : ''}`}>
           <button
-            onClick={() => setReportGeneratorOpen(true)}
-            className={`w-full flex items-center gap-3 rounded-[0.2rem] transition-all duration-200 bg-brand-primary text-white hover:bg-[#1d4ed8] ${
-              sidebarHovered ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'
-            }`}
+            onClick={() => {
+              setReportGeneratorOpen(true);
+              setMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 rounded-[0.2rem] transition-all duration-200 bg-brand-primary text-white hover:bg-[#1d4ed8]
+              px-3 py-2.5
+              ${!sidebarHovered ? 'md:px-0 md:justify-center' : ''}
+            `}
           >
             <Link size={20} weight="bold" className="flex-shrink-0" />
-            <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${
-              sidebarHovered ? 'opacity-100 w-auto' : 'opacity-0 w-0'
-            }`}>
+            <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300
+              ${sidebarHovered ? 'md:opacity-100 md:w-auto' : 'md:opacity-0 md:w-0'}
+            `}>
               Generate Reports
             </span>
           </button>
@@ -127,7 +174,35 @@ function MainApp() {
       </aside>
 
       {/* Main Content */}
-      <main className={`min-h-screen transition-all duration-300 ease-in-out ${sidebarHovered ? 'ml-56' : 'ml-16'}`}>
+      <main className={`min-h-screen transition-all duration-300 ease-in-out pt-14 md:pt-0 ml-0 ${sidebarHovered ? 'md:ml-56' : 'md:ml-16'}`}>
+        {/* Project Header Bar */}
+        <div className="hidden md:flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 border-b border-[#e4e4e4] bg-white/80 backdrop-blur-sm">
+          <ProjectManager />
+          <div className="flex items-center gap-3">
+            {/* Undo/Redo buttons */}
+            <div className="flex items-center gap-1 border-r border-gray-200 pr-3">
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                title="Undo (Ctrl+Z)"
+              >
+                <ArrowCounterClockwise size={16} />
+              </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <ArrowClockwise size={16} />
+              </button>
+            </div>
+            <div className="text-xs text-gray-500">
+              <span>Auto-saved to browser</span>
+            </div>
+          </div>
+        </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
@@ -153,6 +228,9 @@ function MainApp() {
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Onboarding modal for first-time visitors */}
+      <OnboardingModal />
     </div>
   );
 }
@@ -190,8 +268,12 @@ function App() {
 }
 
 function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
-  const { tiers, costs, variableCosts, fixedCosts, resetToEmpty } = usePricing();
+  const { tiers, costs, variableCosts, fixedCosts, features, resetToEmpty } = usePricing();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Keyboard navigation for reset modal
+  useEscapeKey(() => setShowResetConfirm(false), showResetConfirm);
+  const modalRef = useFocusTrap<HTMLDivElement>(showResetConfirm);
 
   // Calculate key metrics from context
   const avgVariableCost = costs.variableTotal;
@@ -233,28 +315,41 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="presentation">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setShowResetConfirm(false)}
+            aria-hidden="true"
           />
-          {/* Modal */}
-          <div className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200">
+          {/* Modal - use alertdialog for destructive actions */}
+          <div
+            ref={modalRef}
+            role="alertdialog"
+            aria-labelledby="reset-modal-title"
+            aria-describedby="reset-modal-description"
+            className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 animate-in fade-in zoom-in-95 duration-200"
+          >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center" aria-hidden="true">
                 <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Start Fresh?</h3>
-                <p className="text-sm text-gray-500">Clear all data and begin with empty state</p>
+                <h3 id="reset-modal-title" className="font-semibold text-gray-900">Start Fresh?</h3>
+                <p id="reset-modal-description" className="text-sm text-gray-500">Clear all data and begin with empty state</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
-              This will remove all costs, tiers, and features. You'll start with a clean slate.
-            </p>
+            <div className="text-sm text-gray-600 mb-6 space-y-2">
+              <p>This will permanently delete:</p>
+              <ul className="list-disc list-inside text-gray-500 text-xs space-y-1">
+                <li>{variableCosts.length} variable cost{variableCosts.length !== 1 ? 's' : ''}</li>
+                <li>{fixedCosts.length} fixed cost{fixedCosts.length !== 1 ? 's' : ''}</li>
+                <li>{tiers.length} pricing tier{tiers.length !== 1 ? 's' : ''}</li>
+                <li>{features.length} feature{features.length !== 1 ? 's' : ''}</li>
+              </ul>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
@@ -288,32 +383,32 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
           <p className="text-2xl font-semibold text-gray-900 mt-2 font-mono tracking-tight">
             MYR {targetPrice}
           </p>
-          <p className="text-xs text-gray-400 mt-1">{paidTier?.name ?? 'No paid tier'} / month</p>
+          <p className="text-xs text-gray-500 mt-1">{paidTier?.name ?? 'No paid tier'} / month</p>
         </div>
 
         <div className="card p-5 border-l-[3px] border-l-emerald-500">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Gross Margin</p>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              grossMargin >= 70 ? 'bg-emerald-50' :
-              grossMargin >= 50 ? 'bg-amber-50' :
+              grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'bg-emerald-50' :
+              grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'bg-amber-50' :
               'bg-red-50'
             }`}>
               <Percent size={16} weight="duotone" className={
-                grossMargin >= 70 ? 'text-emerald-600' :
-                grossMargin >= 50 ? 'text-amber-600' :
+                grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' :
+                grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' :
                 'text-red-600'
               } />
             </div>
           </div>
           <p className={`text-2xl font-semibold mt-2 ${
-            grossMargin >= 70 ? 'text-emerald-600' :
-            grossMargin >= 50 ? 'text-amber-600' :
+            grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' :
+            grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' :
             'text-red-600'
           }`}>
             {grossMargin.toFixed(0)}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">At target price</p>
+          <p className="text-xs text-gray-500 mt-1">At target price</p>
         </div>
 
         <div className="card p-5 border-l-[3px] border-l-violet-500">
@@ -326,7 +421,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
           <p className="text-2xl font-semibold text-gray-900 mt-2 font-mono tracking-tight">
             MYR {avgVariableCost.toFixed(2)}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Variable cost / customer</p>
+          <p className="text-xs text-gray-500 mt-1">Variable cost / customer</p>
         </div>
 
         <div className="card p-5 border-l-[3px] border-l-amber-500">
@@ -339,7 +434,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
           <p className="text-2xl font-semibold text-gray-900 mt-2">
             {costItemsCount}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             {variableCosts.length} variable, {fixedCosts.length} fixed
           </p>
         </div>
@@ -373,7 +468,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
                       <p className="text-sm font-medium text-gray-900 group-hover:text-brand-primary transition-colors">
                         {item.label}
                       </p>
-                      <p className="text-xs text-gray-400">{item.sub}</p>
+                      <p className="text-xs text-gray-500">{item.sub}</p>
                     </div>
                   </div>
                   <ArrowRight
@@ -434,7 +529,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
               <Eye size={18} weight="bold" className="text-white" />
               <div className="text-left">
                 <p className="text-sm font-medium text-white">Preview Pricing Page</p>
-                <p className="text-xs text-gray-400">See customer view</p>
+                <p className="text-xs text-gray-300">See customer view</p>
               </div>
             </button>
           </div>
@@ -450,45 +545,47 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
             <p className="text-xl font-semibold text-gray-900 font-mono mt-1">
               MYR {costs.variableTotal.toFixed(2)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">Per customer / month</p>
+            <p className="text-xs text-gray-500 mt-1">Per customer / month</p>
           </div>
           <div className="p-4 bg-gray-50 rounded-[0.2rem] border border-[#e4e4e4]">
             <p className="text-sm text-gray-500">Fixed Costs</p>
             <p className="text-xl font-semibold text-gray-900 font-mono mt-1">
               MYR {costs.fixedTotal.toFixed(2)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">Total monthly</p>
+            <p className="text-xs text-gray-500 mt-1">Total monthly</p>
           </div>
           <div className="p-4 bg-gray-50 rounded-[0.2rem] border border-[#e4e4e4]">
             <p className="text-sm text-gray-500">Active Tiers</p>
             <p className="text-xl font-semibold text-gray-900 mt-1">{activeTiers.length}</p>
-            <p className="text-xs text-gray-400 mt-1">of {tiers.length} configured</p>
+            <p className="text-xs text-gray-500 mt-1">of {tiers.length} configured</p>
           </div>
           <div className={`p-4 rounded-[0.2rem] border ${
-            grossMargin >= 70
+            grossMargin >= MARGIN_THRESHOLDS.HEALTHY
               ? 'bg-emerald-50 border-emerald-200'
-              : grossMargin >= 50
+              : grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE
               ? 'bg-amber-50 border-amber-200'
               : 'bg-red-50 border-red-200'
           }`}>
             <p className={`text-sm ${
-              grossMargin >= 70 ? 'text-emerald-600' :
-              grossMargin >= 50 ? 'text-amber-600' :
+              grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' :
+              grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' :
               'text-red-600'
             }`}>Health Status</p>
             <p className={`text-xl font-semibold mt-1 ${
-              grossMargin >= 70 ? 'text-emerald-700' :
-              grossMargin >= 50 ? 'text-amber-700' :
+              grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-700' :
+              grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-700' :
               'text-red-700'
             }`}>
-              {grossMargin >= 70 ? 'Healthy' : grossMargin >= 50 ? 'Acceptable' : 'Review Needed'}
+              {getMarginStyleFromThreshold(grossMargin).label}
             </p>
             <p className={`text-xs mt-1 ${
-              grossMargin >= 70 ? 'text-emerald-500' :
-              grossMargin >= 50 ? 'text-amber-500' :
+              grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-500' :
+              grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-500' :
               'text-red-500'
             }`}>
-              {grossMargin >= 70 ? '≥70% margin' : grossMargin >= 50 ? '50-70% margin' : '<50% margin'}
+              {grossMargin >= MARGIN_THRESHOLDS.HEALTHY ? `≥${MARGIN_THRESHOLDS.HEALTHY}% margin` :
+               grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? `${MARGIN_THRESHOLDS.ACCEPTABLE}-${MARGIN_THRESHOLDS.HEALTHY}% margin` :
+               `<${MARGIN_THRESHOLDS.ACCEPTABLE}% margin`}
             </p>
           </div>
         </div>

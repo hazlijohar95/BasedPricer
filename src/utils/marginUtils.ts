@@ -1,7 +1,11 @@
 /**
  * Shared margin and color utility functions
  * Used across PricingCalculator, TierConfigurator, and FeatureInventory components
+ *
+ * NOTE: All thresholds are centralized in /src/constants/index.ts
  */
+
+import { MARGIN_THRESHOLDS } from '../constants';
 
 // ============================================================================
 // Margin Status Types
@@ -18,16 +22,16 @@ export interface MarginColors {
 
 // ============================================================================
 // Gross Margin Utilities (used in PricingCalculator)
-// Thresholds: >= 70% healthy, >= 50% acceptable, < 50% low
+// Uses centralized MARGIN_THRESHOLDS from constants
 // ============================================================================
 
 /**
  * Get margin health status based on gross margin percentage
- * SaaS industry standards: >= 70% is healthy, >= 50% is acceptable, < 50% is low
+ * SaaS industry standards: >= HEALTHY is healthy, >= ACCEPTABLE is acceptable, < ACCEPTABLE is low
  */
 export function getGrossMarginHealth(margin: number): MarginHealth {
-  if (margin >= 70) return 'healthy';
-  if (margin >= 50) return 'acceptable';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'low';
 }
 
@@ -35,8 +39,8 @@ export function getGrossMarginHealth(margin: number): MarginHealth {
  * Get text color class for gross margin display
  */
 export function getGrossMarginTextColor(margin: number): string {
-  if (margin >= 70) return 'text-emerald-600';
-  if (margin >= 50) return 'text-amber-600';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'text-emerald-600';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'text-amber-600';
   return 'text-red-600';
 }
 
@@ -44,8 +48,8 @@ export function getGrossMarginTextColor(margin: number): string {
  * Get background color class for gross margin display
  */
 export function getGrossMarginBgColor(margin: number): string {
-  if (margin >= 70) return 'bg-emerald-50';
-  if (margin >= 50) return 'bg-amber-50';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'bg-emerald-50';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'bg-amber-50';
   return 'bg-red-50';
 }
 
@@ -53,8 +57,8 @@ export function getGrossMarginBgColor(margin: number): string {
  * Get border color class for gross margin display
  */
 export function getGrossMarginBorderColor(margin: number): string {
-  if (margin >= 70) return 'border-l-emerald-500';
-  if (margin >= 50) return 'border-l-amber-500';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'border-l-emerald-500';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'border-l-amber-500';
   return 'border-l-red-500';
 }
 
@@ -62,7 +66,7 @@ export function getGrossMarginBorderColor(margin: number): string {
  * Get all margin colors in one call (for efficiency)
  */
 export function getGrossMarginColors(margin: number): MarginColors {
-  if (margin >= 70) {
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) {
     return {
       text: 'text-emerald-600',
       bg: 'bg-emerald-50',
@@ -70,7 +74,7 @@ export function getGrossMarginColors(margin: number): MarginColors {
       icon: 'text-emerald-600',
     };
   }
-  if (margin >= 50) {
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) {
     return {
       text: 'text-amber-600',
       bg: 'bg-amber-50',
@@ -129,16 +133,16 @@ export function getOperatingMarginBorderColor(margin: number): string {
 
 // ============================================================================
 // Tier Margin Utilities (used in TierConfigurator)
-// Thresholds: >= 65% healthy, >= 50% acceptable, < 50% low
+// Now uses the same centralized thresholds as gross margin for consistency
 // ============================================================================
 
 /**
  * Get tier margin health status
- * Tier margins are slightly lower threshold than gross margins
+ * Now uses centralized thresholds for consistency across the app
  */
 export function getTierMarginHealth(margin: number): MarginHealth {
-  if (margin >= 65) return 'healthy';
-  if (margin >= 50) return 'acceptable';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'low';
 }
 
@@ -146,8 +150,8 @@ export function getTierMarginHealth(margin: number): MarginHealth {
  * Get text color class for tier margin display
  */
 export function getTierMarginTextColor(margin: number): string {
-  if (margin >= 65) return 'text-emerald-600';
-  if (margin >= 50) return 'text-amber-600';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'text-emerald-600';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'text-amber-600';
   return 'text-red-600';
 }
 
@@ -155,8 +159,8 @@ export function getTierMarginTextColor(margin: number): string {
  * Get background color class for tier margin display
  */
 export function getTierMarginBgColor(margin: number): string {
-  if (margin >= 65) return 'bg-emerald-50';
-  if (margin >= 50) return 'bg-amber-50';
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'bg-emerald-50';
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'bg-amber-50';
   return 'bg-red-50';
 }
 
@@ -262,14 +266,15 @@ export function getProfitLossBgColor(value: number): string {
 
 // ============================================================================
 // Price Sensitivity Utilities (used in PricingCalculator)
+// Uses centralized MARGIN_THRESHOLDS from constants
 // ============================================================================
 
 /**
  * Get status badge class for price sensitivity table
  */
 export function getPriceSensitivityStatusClass(grossMargin: number): string {
-  if (grossMargin >= 70) return 'bg-emerald-50 text-emerald-600';
-  if (grossMargin >= 50) return 'bg-amber-50 text-amber-600';
+  if (grossMargin >= MARGIN_THRESHOLDS.HEALTHY) return 'bg-emerald-50 text-emerald-600';
+  if (grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'bg-amber-50 text-amber-600';
   return 'bg-red-50 text-red-600';
 }
 
@@ -277,7 +282,7 @@ export function getPriceSensitivityStatusClass(grossMargin: number): string {
  * Get status label for price sensitivity table
  */
 export function getPriceSensitivityStatusLabel(grossMargin: number): string {
-  if (grossMargin >= 70) return 'Healthy';
-  if (grossMargin >= 50) return 'OK';
+  if (grossMargin >= MARGIN_THRESHOLDS.HEALTHY) return 'Healthy';
+  if (grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'OK';
   return 'Low';
 }
