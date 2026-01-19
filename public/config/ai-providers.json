@@ -258,6 +258,103 @@
         }
       }
     },
+    "groq": {
+      "id": "groq",
+      "name": "Groq",
+      "website": "https://groq.com",
+      "pricingPage": "https://groq.com/pricing/",
+      "apiDocsUrl": "https://console.groq.com/docs/overview",
+      "keyDocsUrl": "https://console.groq.com/keys",
+      "keyPlaceholder": "gsk_...",
+      "keyPattern": "^gsk_[a-zA-Z0-9_]{20,}$",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "isOpenAICompatible": true,
+      "supportsStreaming": true,
+      "defaultModel": "llama-3.3-70b-versatile",
+      "notes": "Ultra-fast inference using custom LPU hardware. Up to 280 tokens/second. Excellent for real-time applications.",
+      "models": {
+        "llama-3.3-70b-versatile": {
+          "id": "llama-3.3-70b-versatile",
+          "name": "Llama 3.3 70B Versatile",
+          "description": "Best quality Llama model, excellent for complex analysis",
+          "inputPricePerMillion": 0.59,
+          "outputPricePerMillion": 0.79,
+          "contextWindow": 128000,
+          "maxOutputTokens": 32768,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/",
+          "notes": "280 tokens/second inference speed"
+        },
+        "llama-3.1-70b-versatile": {
+          "id": "llama-3.1-70b-versatile",
+          "name": "Llama 3.1 70B Versatile",
+          "description": "Previous gen 70B, still very capable",
+          "inputPricePerMillion": 0.59,
+          "outputPricePerMillion": 0.79,
+          "contextWindow": 128000,
+          "maxOutputTokens": 32768,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/"
+        },
+        "llama-3.1-8b-instant": {
+          "id": "llama-3.1-8b-instant",
+          "name": "Llama 3.1 8B Instant",
+          "description": "Ultra-fast small model for simple tasks",
+          "inputPricePerMillion": 0.05,
+          "outputPricePerMillion": 0.08,
+          "contextWindow": 128000,
+          "maxOutputTokens": 8192,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/",
+          "notes": "Fastest inference, best for simple tasks"
+        },
+        "llama-3.2-3b-preview": {
+          "id": "llama-3.2-3b-preview",
+          "name": "Llama 3.2 3B Preview",
+          "description": "Lightweight model for basic tasks",
+          "inputPricePerMillion": 0.06,
+          "outputPricePerMillion": 0.06,
+          "contextWindow": 128000,
+          "maxOutputTokens": 8192,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/"
+        },
+        "mixtral-8x7b-32768": {
+          "id": "mixtral-8x7b-32768",
+          "name": "Mixtral 8x7B",
+          "description": "Mixture of experts model, good balance",
+          "inputPricePerMillion": 0.24,
+          "outputPricePerMillion": 0.24,
+          "contextWindow": 32768,
+          "maxOutputTokens": 32768,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/"
+        },
+        "gemma2-9b-it": {
+          "id": "gemma2-9b-it",
+          "name": "Gemma 2 9B",
+          "description": "Google's efficient open model",
+          "inputPricePerMillion": 0.20,
+          "outputPricePerMillion": 0.20,
+          "contextWindow": 8192,
+          "maxOutputTokens": 8192,
+          "supportsVision": false,
+          "supportsTools": true,
+          "lastPriceUpdate": "2026-01-19",
+          "priceSource": "https://groq.com/pricing/"
+        }
+      }
+    },
     "glm": {
       "id": "glm",
       "name": "GLM (Zhipu)",

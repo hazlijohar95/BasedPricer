@@ -32,6 +32,7 @@ const DEFAULT_MODELS: Record<AIProvider, string> = {
   openai: 'gpt-4o',           // Best for structured JSON output and code analysis
   anthropic: 'claude-sonnet-4-20250514', // Best balance of speed and intelligence
   openrouter: 'anthropic/claude-3.5-sonnet', // Claude 3.5 Sonnet via OpenRouter
+  groq: 'llama-3.3-70b-versatile', // Fast inference, good for analysis (280 tps)
   minimax: 'MiniMax-M2.1',    // Open-source, excellent for coding tasks
   glm: 'glm-4.7',             // Latest GLM model from Zhipu AI
 };
@@ -41,8 +42,49 @@ export const MODEL_DISPLAY_NAMES: Record<AIProvider, string> = {
   openai: 'GPT-4o',
   anthropic: 'Claude Sonnet 4',
   openrouter: 'Claude 3.5 Sonnet',
+  groq: 'Llama 3.3 70B',
   minimax: 'MiniMax M2.1',
   glm: 'GLM-4.7',
+};
+
+// Top 3 models for each provider with quality labels
+export interface ModelOption {
+  id: string;
+  name: string;
+  badge?: 'best' | 'fast' | 'balanced';
+  description?: string;
+}
+
+export const PROVIDER_MODELS: Record<AIProvider, ModelOption[]> = {
+  openai: [
+    { id: 'gpt-4o', name: 'GPT-4o', badge: 'best', description: 'Best quality' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', badge: 'fast', description: 'Fast & cheap' },
+    { id: 'o1-mini', name: 'o1 Mini', badge: 'balanced', description: 'Reasoning' },
+  ],
+  anthropic: [
+    { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', badge: 'best', description: 'Best quality' },
+    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', badge: 'balanced', description: 'Great value' },
+    { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', badge: 'fast', description: 'Fast & cheap' },
+  ],
+  openrouter: [
+    { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', badge: 'best', description: 'Best quality' },
+    { id: 'openai/gpt-4o', name: 'GPT-4o', badge: 'balanced', description: 'Great all-round' },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash', badge: 'fast', description: 'Free tier' },
+  ],
+  groq: [
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', badge: 'best', description: 'Best quality' },
+    { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B', badge: 'balanced', description: 'Reliable' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B', badge: 'fast', description: 'Ultra fast' },
+  ],
+  minimax: [
+    { id: 'MiniMax-M1', name: 'MiniMax M1', badge: 'best', description: '1M context' },
+    { id: 'MiniMax-M2.1', name: 'MiniMax M2.1', badge: 'balanced', description: 'Good value' },
+  ],
+  glm: [
+    { id: 'glm-4-plus', name: 'GLM-4 Plus', badge: 'best', description: 'Flagship' },
+    { id: 'glm-4-flash', name: 'GLM-4 Flash', badge: 'fast', description: 'Very cheap' },
+    { id: 'glm-4v-plus', name: 'GLM-4V Plus', badge: 'balanced', description: 'Vision' },
+  ],
 };
 
 /**
@@ -153,7 +195,7 @@ async function callOpenRouter(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${config.apiKey}`,
       'HTTP-Referer': window.location.origin,
-      'X-Title': 'Pricing Tools',
+      'X-Title': 'BasedPricer',
     },
     body: JSON.stringify({
       model: config.model ?? DEFAULT_MODELS.openrouter,
@@ -173,6 +215,51 @@ async function callOpenRouter(
   }
 
   updateKeyValidation('openrouter', true);
+  const data = await response.json();
+
+  return {
+    content: data.choices[0]?.message?.content ?? '',
+    usage: {
+      promptTokens: data.usage?.prompt_tokens ?? 0,
+      completionTokens: data.usage?.completion_tokens ?? 0,
+      totalTokens: data.usage?.total_tokens ?? 0,
+    },
+  };
+}
+
+/**
+ * Call Groq API (OpenAI-compatible, ultra-fast inference)
+ * Groq provides extremely fast inference with their custom LPU hardware
+ * Supports Llama 3.x models with speeds up to 1000+ tokens/second
+ */
+async function callGroq(
+  messages: AIMessage[],
+  config: AIClientConfig
+): Promise<AIResponse> {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model ?? DEFAULT_MODELS.groq,
+      messages,
+      max_tokens: config.maxTokens ?? 4096,
+      temperature: config.temperature ?? 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    // Only mark key as invalid on auth errors, not rate limits or other errors
+    if (response.status === 401 || response.status === 403) {
+      updateKeyValidation('groq', false);
+    }
+    throw new Error(error.error?.message ?? `Groq API error: ${response.status}`);
+  }
+
+  updateKeyValidation('groq', true);
   const data = await response.json();
 
   return {
@@ -300,6 +387,8 @@ export function createAIClient(provider: AIProvider, apiKey?: string) {
           return callAnthropic(messages, fullConfig);
         case 'openrouter':
           return callOpenRouter(messages, fullConfig);
+        case 'groq':
+          return callGroq(messages, fullConfig);
         case 'minimax':
           return callMiniMax(messages, fullConfig);
         case 'glm':
@@ -333,7 +422,7 @@ export function createAIClient(provider: AIProvider, apiKey?: string) {
  * Get an AI client using the first available API key
  */
 export function getAutoClient(): ReturnType<typeof createAIClient> | null {
-  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter', 'minimax', 'glm'];
+  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter', 'groq', 'minimax', 'glm'];
 
   for (const provider of providers) {
     const key = getAPIKey(provider);

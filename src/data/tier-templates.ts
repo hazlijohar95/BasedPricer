@@ -4,7 +4,7 @@
  */
 
 import { type BusinessType } from './business-types';
-import type { Tier, TierLimit } from './tiers';
+import type { Tier } from './tiers';
 
 export interface TierTemplate {
   name: string;
@@ -387,13 +387,14 @@ export function convertTemplatesToTiers(
   templates: TierTemplate[],
   businessType: BusinessType
 ): Tier[] {
-  return templates.map((template, index) => ({
+  return templates.map((template) => ({
     id: `${businessType}-${template.name.toLowerCase().replace(/\s+/g, '-')}`,
     name: template.name,
     tagline: template.tagline,
     targetAudience: template.targetAudience,
     monthlyPriceMYR: template.suggestedPriceMYR,
     annualPriceMYR: Math.round(template.suggestedPriceMYR * 10), // ~17% annual discount
+    annualDiscount: 17,
     status: template.status,
     limits: Object.entries(template.keyLimits).map(([featureId, limit]) => ({
       featureId: featureId.toLowerCase().replace(/[^a-z0-9]/g, '_'),

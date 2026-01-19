@@ -1,0 +1,396 @@
+/**
+ * BasedPricer Brand System
+ *
+ * A clean, premium design system inspired by modern developer tools.
+ * Geometric, minimal, with subtle depth and smooth animations.
+ */
+
+/* =============================================================================
+   BRAND COLORS
+   ============================================================================= */
+
+:root {
+  /* Primary - A sophisticated blue that feels premium */
+  --brand-primary: #2563eb;
+  --brand-primary-hover: #1d4ed8;
+  --brand-primary-light: #3b82f6;
+  --brand-primary-subtle: rgba(37, 99, 235, 0.08);
+  --brand-primary-muted: rgba(37, 99, 235, 0.15);
+
+  /* Neutral palette - Warm grays for elegance */
+  --brand-bg: #fafafa;
+  --brand-surface: #ffffff;
+  --brand-border: #e5e5e5;
+  --brand-border-hover: #d4d4d4;
+
+  /* Text hierarchy */
+  --brand-text-primary: #0a0a0a;
+  --brand-text-secondary: #525252;
+  --brand-text-muted: #a3a3a3;
+
+  /* Semantic colors */
+  --brand-success: #10b981;
+  --brand-warning: #f59e0b;
+  --brand-error: #ef4444;
+
+  /* Shadows - Subtle, layered depth */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* Animation timing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing scale */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root.dark {
+    --brand-bg: #0a0a0a;
+    --brand-surface: #171717;
+    --brand-border: #262626;
+    --brand-border-hover: #404040;
+    --brand-text-primary: #fafafa;
+    --brand-text-secondary: #a3a3a3;
+    --brand-text-muted: #525252;
+  }
+}
+
+/* =============================================================================
+   TYPOGRAPHY
+   ============================================================================= */
+
+.font-brand {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+.logo-wordmark {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* =============================================================================
+   LOGO ANIMATIONS
+   ============================================================================= */
+
+/* Icon animation - bars slide in */
+.logo-icon-animated .logo-bar-1 {
+  animation: slideIn 0.6s var(--ease-out-expo) 0.1s both;
+}
+
+.logo-icon-animated .logo-bar-2 {
+  animation: slideIn 0.6s var(--ease-out-expo) 0.2s both;
+}
+
+.logo-icon-animated .logo-bar-3 {
+  animation: slideIn 0.6s var(--ease-out-expo) 0.3s both;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Wordmark animation */
+.logo-wordmark-animated {
+  animation: fadeSlideUp 0.5s var(--ease-out-expo) 0.2s both;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loader pulse */
+.logo-loader {
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* =============================================================================
+   BRAND BUTTONS
+   ============================================================================= */
+
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: var(--radius-md);
+  transition: all 0.2s var(--ease-out-expo);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Primary button */
+.btn-brand-primary {
+  background: var(--brand-primary);
+  color: white;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-brand-primary:hover {
+  background: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-brand-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Secondary button */
+.btn-brand-secondary {
+  background: var(--brand-surface);
+  color: var(--brand-text-primary);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-brand-secondary:hover {
+  border-color: var(--brand-border-hover);
+  background: var(--brand-bg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Ghost button */
+.btn-brand-ghost {
+  background: transparent;
+  color: var(--brand-text-secondary);
+}
+
+.btn-brand-ghost:hover {
+  background: var(--brand-primary-subtle);
+  color: var(--brand-primary);
+}
+
+/* Button sizes */
+.btn-brand-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-brand-lg {
+  padding: 14px 28px;
+  font-size: 16px;
+  border-radius: var(--radius-lg);
+}
+
+/* Button with icon */
+.btn-brand svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-brand-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-brand-lg svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Ripple effect */
+.btn-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.3) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.5s var(--ease-out-expo), opacity 0.3s;
+}
+
+.btn-brand:active::after {
+  transform: scale(2);
+  opacity: 1;
+  transition: transform 0s, opacity 0s;
+}
+
+/* =============================================================================
+   BRAND CARDS
+   ============================================================================= */
+
+.card-brand {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease-out-expo);
+}
+
+.card-brand:hover {
+  border-color: var(--brand-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.card-brand-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* =============================================================================
+   BRAND INPUTS
+   ============================================================================= */
+
+.input-brand {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-md);
+  color: var(--brand-text-primary);
+  transition: all 0.2s var(--ease-out-expo);
+  outline: none;
+}
+
+.input-brand:hover {
+  border-color: var(--brand-border-hover);
+}
+
+.input-brand:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px var(--brand-primary-subtle);
+}
+
+.input-brand::placeholder {
+  color: var(--brand-text-muted);
+}
+
+/* =============================================================================
+   BRAND BADGES
+   ============================================================================= */
+
+.badge-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+
+.badge-brand-primary {
+  background: var(--brand-primary-subtle);
+  color: var(--brand-primary);
+}
+
+.badge-brand-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.badge-brand-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.badge-brand-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* =============================================================================
+   UTILITY CLASSES
+   ============================================================================= */
+
+/* Brand colors as Tailwind-style utilities */
+.bg-brand-primary { background-color: var(--brand-primary); }
+.bg-brand-subtle { background-color: var(--brand-primary-subtle); }
+.text-brand-primary { color: var(--brand-primary); }
+.border-brand-primary { border-color: var(--brand-primary); }
+
+.fill-brand-primary { fill: var(--brand-primary); }
+
+/* Smooth transitions */
+.transition-brand {
+  transition: all 0.2s var(--ease-out-expo);
+}
+
+/* Focus ring */
+.focus-brand:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-primary-subtle);
+}
+
+/* =============================================================================
+   PAGE TRANSITIONS
+   ============================================================================= */
+
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+/* =============================================================================
+   SKELETON LOADER
+   ============================================================================= */
+
+.skeleton-brand {
+  background: linear-gradient(
+    90deg,
+    var(--brand-border) 0%,
+    var(--brand-bg) 50%,
+    var(--brand-border) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

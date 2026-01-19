@@ -1,6 +1,6 @@
-# Contributing to Pricing Tools
+# Contributing to BasedPricer
 
-Thank you for your interest in contributing to Pricing Tools! This guide will help you get started with contributing to the project, whether you're updating pricing data, adding new features, or fixing bugs.
+Thank you for your interest in contributing to BasedPricer! This guide will help you get started with contributing to the project, whether you're updating pricing data, adding new features, or fixing bugs.
 
 ## Table of Contents
 
@@ -18,8 +18,8 @@ Thank you for your interest in contributing to Pricing Tools! This guide will he
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/pricing-tools-oss.git
-cd pricing-tools-oss
+git clone https://github.com/your-username/BasedPricer.git
+cd BasedPricer
 
 # Install dependencies
 npm install

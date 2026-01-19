@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "ai-providers.schema.json",
   "title": "AI Providers Configuration",
-  "description": "Schema for configuring AI providers and their pricing in pricing-tools-oss",
+  "description": "Schema for configuring AI providers and their pricing in BasedPricer",
   "type": "object",
   "required": ["_meta", "providers"],
   "properties": {

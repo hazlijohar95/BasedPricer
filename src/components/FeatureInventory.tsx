@@ -11,12 +11,14 @@ import {
   Code,
   PencilSimple,
   Trash,
-  GitBranch,
   User,
   CurrencyDollar,
 } from '@phosphor-icons/react';
 import { featureCategories, type FeatureCategory, type Feature } from '../data/features';
 import { usePricing, type VariableCostItem } from '../context/PricingContext';
+import { useDebouncedValue } from '../hooks/useDebounce';
+import { SourceBadge } from './shared';
+import { FeatureStatsGrid } from './features';
 
 type SourceFilter = 'all' | 'codebase' | 'manual';
 
@@ -26,6 +28,7 @@ export function FeatureInventory() {
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebouncedValue(searchQuery, 200); // Debounce search for performance
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -54,11 +57,11 @@ export function FeatureInventory() {
     return features.filter((feature) => {
       const matchesCategory = selectedCategory === 'all' || feature.category === selectedCategory;
       const matchesSource = sourceFilter === 'all' || feature.source === sourceFilter;
-      const matchesSearch = feature.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        feature.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = feature.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        feature.description.toLowerCase().includes(debouncedSearch.toLowerCase());
       return matchesCategory && matchesSource && matchesSearch;
     });
-  }, [features, selectedCategory, sourceFilter, searchQuery]);
+  }, [features, selectedCategory, sourceFilter, debouncedSearch]);
 
   const groupedFeatures = useMemo(() => {
     return filteredFeatures.reduce((acc, feature) => {
@@ -73,6 +76,7 @@ export function FeatureInventory() {
     codebase: features.filter(f => f.source === 'codebase').length,
     manual: features.filter(f => f.source === 'manual').length,
     categories: new Set(features.map(f => f.category)).size,
+    withLimits: features.filter(f => f.hasLimit).length,
   }), [features]);
 
   const handleAddFeature = (newFeature: Omit<Feature, 'id' | 'source' | 'createdAt'>) => {
@@ -117,50 +121,7 @@ export function FeatureInventory() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="card p-5 border-l-[3px] border-l-[#253ff6]">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">Total Features</p>
-            <div className="w-8 h-8 rounded-full bg-[rgba(37,63,246,0.08)] flex items-center justify-center">
-              <Lightning size={16} weight="duotone" className="text-[#253ff6]" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-gray-900 mt-2">{stats.total}</p>
-          <p className="text-xs text-gray-400 mt-1">{stats.categories} categories</p>
-        </div>
-        <div className="card p-5 border-l-[3px] border-l-emerald-500">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">From Codebase</p>
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-              <Code size={16} weight="duotone" className="text-emerald-600" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-emerald-600 mt-2">{stats.codebase}</p>
-          <p className="text-xs text-gray-400 mt-1">AI-detected / cited</p>
-        </div>
-        <div className="card p-5 border-l-[3px] border-l-violet-500">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">User Added</p>
-            <div className="w-8 h-8 rounded-full bg-violet-50 flex items-center justify-center">
-              <User size={16} weight="duotone" className="text-violet-600" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-violet-600 mt-2">{stats.manual}</p>
-          <p className="text-xs text-gray-400 mt-1">Planned / intended</p>
-        </div>
-        <div className="card p-5 border-l-[3px] border-l-amber-500">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">With Limits</p>
-            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-              <GitBranch size={16} weight="duotone" className="text-amber-600" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-amber-600 mt-2">
-            {features.filter(f => f.hasLimit).length}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Tier-limited features</p>
-        </div>
-      </div>
+      <FeatureStatsGrid stats={stats} />
 
       {/* Filters */}
       <div className="card p-4">
@@ -410,23 +371,6 @@ export function FeatureInventory() {
 // ============================================================================
 // Sub-components
 // ============================================================================
-
-function SourceBadge({ source }: { source: 'codebase' | 'manual' }) {
-  if (source === 'codebase') {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[0.2rem] bg-emerald-50 text-emerald-700">
-        <Code size={12} weight="bold" />
-        Codebase
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[0.2rem] bg-violet-50 text-violet-700">
-      <User size={12} weight="bold" />
-      My Feature
-    </span>
-  );
-}
 
 function FeatureCard({
   feature,

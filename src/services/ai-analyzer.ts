@@ -7,7 +7,7 @@ import { getAutoClient, createAIClient } from './ai-client';
 import { type AnalysisPayload } from './github';
 import { extractCostsFromDependencies, type CostSuggestion } from '../data/dependency-costs';
 import { type AIProvider } from './api-keys';
-import { type BusinessType, BUSINESS_TYPES, type PricingModelType } from '../data/business-types';
+import { type BusinessType, type PricingModelType } from '../data/business-types';
 
 export interface DetectedFeature {
   id: string;
@@ -366,6 +366,7 @@ export async function analyzeCodebase(
   options?: {
     provider?: AIProvider;
     apiKey?: string;
+    model?: string;
   }
 ): Promise<AnalysisResult> {
   // Get AI client
@@ -391,6 +392,7 @@ export async function analyzeCodebase(
     { role: 'system', content: ANALYSIS_SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ], {
+    model: options?.model,
     maxTokens: 4096,
     temperature: 0.2, // Lower for more consistent structured output
   });

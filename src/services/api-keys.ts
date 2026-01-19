@@ -1,33 +1,112 @@
 /**
  * API Key Management Service
  * Stores and manages API keys for AI providers in localStorage
+ * Keys are obfuscated to prevent casual inspection
+ *
+ * Uses Zod schemas for runtime validation
  */
 
-export type AIProvider = 'openai' | 'anthropic' | 'openrouter' | 'minimax' | 'glm';
+import {
+  validateAPIKey as zodValidateAPIKey,
+  validateGitHubToken as zodValidateGitHubToken,
+  type AIProvider,
+  type StoredAPIKey,
+} from '../schemas/api-keys';
 
-export interface StoredAPIKey {
-  provider: AIProvider;
-  key: string;
-  addedAt: number;
-  lastValidated?: number;
-  isValid?: boolean;
-}
+// Re-export types from schemas for backwards compatibility
+export type { AIProvider, StoredAPIKey };
 
 interface APIKeyStorage {
   keys: Record<AIProvider, StoredAPIKey | null>;
   githubToken?: string;
+  _obfuscated?: boolean; // Marker for obfuscated storage
 }
 
 const STORAGE_KEY = 'pricing-tools-api-keys';
+const OBFUSCATION_KEY = 'pT$k3y'; // Simple obfuscation seed
 
-// Key format patterns for validation
-const KEY_PATTERNS: Record<AIProvider, RegExp> = {
-  openai: /^sk-[a-zA-Z0-9-_]{20,}$/,
-  anthropic: /^sk-ant-[a-zA-Z0-9-_]{20,}$/,
-  openrouter: /^sk-or-[a-zA-Z0-9-_]{20,}$/,
-  minimax: /^[a-zA-Z0-9]{20,}$/, // MiniMax uses alphanumeric keys
-  glm: /^[a-zA-Z0-9._-]{20,}$/, // Zhipu GLM keys are alphanumeric with dots
-};
+/**
+ * Simple XOR-based obfuscation (not encryption, but deters casual inspection)
+ */
+function obfuscate(text: string): string {
+  const result: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    result.push(text.charCodeAt(i) ^ OBFUSCATION_KEY.charCodeAt(i % OBFUSCATION_KEY.length));
+  }
+  return btoa(String.fromCharCode(...result));
+}
+
+/**
+ * Deobfuscate a string
+ */
+function deobfuscate(encoded: string): string {
+  try {
+    const decoded = atob(encoded);
+    const result: number[] = [];
+    for (let i = 0; i < decoded.length; i++) {
+      result.push(decoded.charCodeAt(i) ^ OBFUSCATION_KEY.charCodeAt(i % OBFUSCATION_KEY.length));
+    }
+    return String.fromCharCode(...result);
+  } catch {
+    return encoded; // Return as-is if deobfuscation fails
+  }
+}
+
+/**
+ * Obfuscate sensitive fields in storage
+ */
+function obfuscateStorage(storage: APIKeyStorage): APIKeyStorage {
+  const obfuscated: APIKeyStorage = {
+    keys: { openai: null, anthropic: null, openrouter: null, groq: null, minimax: null, glm: null },
+    _obfuscated: true
+  };
+
+  for (const [provider, keyData] of Object.entries(storage.keys)) {
+    if (keyData) {
+      obfuscated.keys[provider as AIProvider] = {
+        ...keyData,
+        key: obfuscate(keyData.key),
+      };
+    }
+  }
+
+  if (storage.githubToken) {
+    obfuscated.githubToken = obfuscate(storage.githubToken);
+  }
+
+  return obfuscated;
+}
+
+/**
+ * Deobfuscate sensitive fields in storage
+ */
+function deobfuscateStorage(storage: APIKeyStorage): APIKeyStorage {
+  if (!storage._obfuscated) {
+    return storage; // Already plaintext (legacy)
+  }
+
+  const deobfuscated: APIKeyStorage = {
+    keys: { openai: null, anthropic: null, openrouter: null, groq: null, minimax: null, glm: null }
+  };
+
+  for (const [provider, keyData] of Object.entries(storage.keys)) {
+    if (keyData) {
+      deobfuscated.keys[provider as AIProvider] = {
+        ...keyData,
+        key: deobfuscate(keyData.key),
+      };
+    }
+  }
+
+  if (storage.githubToken) {
+    deobfuscated.githubToken = deobfuscate(storage.githubToken);
+  }
+
+  return deobfuscated;
+}
+
+// NOTE: Key format validation is now handled by Zod schemas in ../schemas/api-keys.ts
+// The regex patterns have been moved there for consistency
 
 // Provider display names
 export const PROVIDER_INFO: Record<AIProvider, { name: string; placeholder: string; docsUrl: string }> = {
@@ -46,6 +125,11 @@ export const PROVIDER_INFO: Record<AIProvider, { name: string; placeholder: stri
     placeholder: 'sk-or-...',
     docsUrl: 'https://openrouter.ai/keys',
   },
+  groq: {
+    name: 'Groq',
+    placeholder: 'gsk_...',
+    docsUrl: 'https://console.groq.com/keys',
+  },
   minimax: {
     name: 'MiniMax',
     placeholder: 'Your API key...',
@@ -59,18 +143,19 @@ export const PROVIDER_INFO: Record<AIProvider, { name: string; placeholder: stri
 };
 
 /**
- * Get all stored API keys
+ * Get all stored API keys (handles both obfuscated and legacy plaintext)
  */
 export function getStoredKeys(): APIKeyStorage {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored) as APIKeyStorage;
+      return deobfuscateStorage(parsed);
     }
   } catch (e) {
     console.error('Failed to load API keys:', e);
   }
-  return { keys: { openai: null, anthropic: null, openrouter: null, minimax: null, glm: null } };
+  return { keys: { openai: null, anthropic: null, openrouter: null, groq: null, minimax: null, glm: null } };
 }
 
 /**
@@ -86,7 +171,7 @@ export function getAPIKey(provider: AIProvider): string | null {
  */
 export function getFirstAvailableKey(): { provider: AIProvider; key: string } | null {
   const storage = getStoredKeys();
-  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter', 'minimax', 'glm'];
+  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter', 'groq', 'minimax', 'glm'];
 
   for (const provider of providers) {
     const stored = storage.keys[provider];
@@ -99,42 +184,15 @@ export function getFirstAvailableKey(): { provider: AIProvider; key: string } | 
 
 /**
  * Validate API key format (not actual API validation)
+ * Uses Zod schemas for consistent validation across the app
  */
 export function validateKeyFormat(provider: AIProvider, key: string): { valid: boolean; error?: string } {
-  if (!key || key.trim() === '') {
-    return { valid: false, error: 'API key is required' };
-  }
-
-  const trimmedKey = key.trim();
-  const pattern = KEY_PATTERNS[provider];
-
-  // For OpenAI, also accept project keys and session keys
-  if (provider === 'openai') {
-    if (trimmedKey.startsWith('sk-') && trimmedKey.length > 20) {
-      return { valid: true };
-    }
-  }
-
-  // For MiniMax and GLM, be more lenient - just check minimum length
-  if (provider === 'minimax' || provider === 'glm') {
-    if (trimmedKey.length >= 20) {
-      return { valid: true };
-    }
-    return { valid: false, error: 'API key must be at least 20 characters' };
-  }
-
-  if (!pattern.test(trimmedKey)) {
-    return {
-      valid: false,
-      error: `Invalid ${PROVIDER_INFO[provider].name} key format. Expected format: ${PROVIDER_INFO[provider].placeholder}`
-    };
-  }
-
-  return { valid: true };
+  const result = zodValidateAPIKey(provider, key);
+  return { valid: result.success, error: result.error };
 }
 
 /**
- * Save API key for a provider
+ * Save API key for a provider (stored obfuscated)
  */
 export function saveAPIKey(provider: AIProvider, key: string): { success: boolean; error?: string } {
   const validation = validateKeyFormat(provider, key);
@@ -150,7 +208,8 @@ export function saveAPIKey(provider: AIProvider, key: string): { success: boolea
       addedAt: Date.now(),
       isValid: undefined, // Will be validated on first use
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    // Store obfuscated to prevent casual inspection
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obfuscateStorage(storage)));
     return { success: true };
   } catch (e) {
     console.error('Failed to save API key:', e);
@@ -168,7 +227,7 @@ export function removeAPIKey(provider: AIProvider): void {
   try {
     const storage = getStoredKeys();
     storage.keys[provider] = null;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obfuscateStorage(storage)));
   } catch (e) {
     console.error('Failed to remove API key:', e);
   }
@@ -183,7 +242,7 @@ export function updateKeyValidation(provider: AIProvider, isValid: boolean): voi
     if (storage.keys[provider]) {
       storage.keys[provider]!.isValid = isValid;
       storage.keys[provider]!.lastValidated = Date.now();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obfuscateStorage(storage)));
     }
   } catch (e) {
     console.error('Failed to update key validation:', e);
@@ -199,23 +258,20 @@ export function getGitHubToken(): string | null {
 }
 
 /**
- * Save GitHub token
+ * Save GitHub token (stored obfuscated)
+ * Uses Zod validation for consistent format checking
  */
 export function saveGitHubToken(token: string): { success: boolean; error?: string } {
-  if (!token || token.trim() === '') {
-    return { success: false, error: 'Token is required' };
-  }
-
-  // GitHub tokens start with ghp_, github_pat_, or gho_
-  const trimmedToken = token.trim();
-  if (!trimmedToken.match(/^(ghp_|github_pat_|gho_)[a-zA-Z0-9_]+$/)) {
-    return { success: false, error: 'Invalid GitHub token format' };
+  // Use Zod schema validation
+  const validation = zodValidateGitHubToken(token);
+  if (!validation.success) {
+    return { success: false, error: validation.error };
   }
 
   try {
     const storage = getStoredKeys();
-    storage.githubToken = trimmedToken;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    storage.githubToken = token.trim();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obfuscateStorage(storage)));
     return { success: true };
   } catch (e) {
     console.error('Failed to save GitHub token:', e);
@@ -233,7 +289,7 @@ export function removeGitHubToken(): void {
   try {
     const storage = getStoredKeys();
     delete storage.githubToken;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obfuscateStorage(storage)));
   } catch (e) {
     console.error('Failed to remove GitHub token:', e);
   }

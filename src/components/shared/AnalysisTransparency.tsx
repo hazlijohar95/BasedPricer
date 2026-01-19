@@ -13,7 +13,6 @@
 import { useState, useEffect } from 'react';
 import {
   loadAnalysisPromptsConfig,
-  buildSystemPrompt,
   type AnalysisPromptsConfig,
 } from '../../services/config-loader';
 
@@ -199,7 +198,7 @@ function OverviewTab({
         <div>
           <h4 className="font-medium text-gray-900">Prompt Engineering</h4>
           <div className="mt-2 space-y-2 text-sm text-gray-600">
-            {config._documentation.promptEngineering && (
+            {config._documentation.promptEngineering ? (
               <>
                 {Object.entries(config._documentation.promptEngineering as Record<string, string>).map(
                   ([key, value]) => (
@@ -207,12 +206,12 @@ function OverviewTab({
                       <span className="font-medium text-gray-700">
                         {key.replace(/^why/, 'Why ')}:
                       </span>{' '}
-                      {value}
+                      {String(value)}
                     </div>
                   )
                 )}
               </>
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -230,7 +229,7 @@ function OverviewTab({
               or change the output format.
             </p>
             <a
-              href="https://github.com/user/pricing-tools-oss/blob/main/public/config/analysis-prompts.json"
+              href="https://github.com/hazlijohar95/BasedPricer/blob/main/public/config/analysis-prompts.json"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 inline-block text-sm font-medium text-blue-600 hover:underline"
@@ -327,7 +326,7 @@ function PromptsTab({
       )}
 
       {/* Template variables */}
-      {config?._documentation?.variables && (
+      {config?._documentation?.variables ? (
         <div className="rounded-lg border border-gray-200 p-3">
           <h4 className="text-sm font-medium text-gray-700">Template Variables</h4>
           <div className="mt-2 grid gap-1 text-xs">
@@ -337,13 +336,13 @@ function PromptsTab({
                   <code className="rounded bg-gray-100 px-1 font-mono text-blue-600">
                     {variable}
                   </code>
-                  <span className="text-gray-600">{description}</span>
+                  <span className="text-gray-600">{String(description)}</span>
                 </div>
               )
             )}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

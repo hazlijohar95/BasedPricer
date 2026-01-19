@@ -200,7 +200,7 @@ export async function refreshExchangeRate(): Promise<number> {
   // Clear cache
   try {
     localStorage.removeItem(CACHE_KEY);
-  } catch (e) {
+  } catch {
     // Ignore
   }
 
@@ -237,7 +237,7 @@ export function isCachingAvailable(): boolean {
     localStorage.setItem(testKey, 'test');
     localStorage.removeItem(testKey);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }

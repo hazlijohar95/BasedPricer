@@ -61,8 +61,12 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
       selectedPrice: pricingState.selectedPrice,
       tiers: pricingState.tiers,
       features: pricingState.features,
+      tierDisplayConfigs: pricingState.tierDisplayConfigs,
       utilizationRate: pricingState.utilizationRate,
       tierDistribution: pricingState.tierDistribution,
+      businessType: pricingState.businessType,
+      businessTypeConfidence: pricingState.businessTypeConfidence,
+      pricingModelType: pricingState.pricingModelType,
     };
     return createReportData(projectName, state, notes);
   }, [pricingState, projectName, notes]);

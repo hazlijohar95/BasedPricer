@@ -12,7 +12,6 @@ import {
   Lightbulb,
   Package,
   Stack,
-  Lock,
   Sparkle,
   ShieldCheck,
   Rocket,
@@ -44,8 +43,9 @@ import {
   quickAnalyzeFromPackageJson,
   type AnalysisResult,
 } from '../services/ai-analyzer';
-import { MODEL_DISPLAY_NAMES } from '../services/ai-client';
+import { MODEL_DISPLAY_NAMES, PROVIDER_MODELS } from '../services/ai-client';
 import { usePricing } from '../context/PricingContext';
+import { useNavigation } from '../context/NavigationContext';
 import { ProviderLogo, GitHubLogo, PROVIDER_COLORS } from './ProviderLogos';
 import type { FeatureCategory } from '../data/features';
 
@@ -54,7 +54,6 @@ import {
   DataFlowDisclosure,
   RepoAccessInfo,
   AnalysisProgressCard,
-  AnalysisScopeInfo,
   type FetchProgress,
 } from './shared';
 
@@ -70,7 +69,7 @@ import {
 } from '../utils/aiCostCalculator';
 
 // Business type data
-import { BUSINESS_TYPES, type BusinessType } from '../data/business-types';
+import { BUSINESS_TYPES } from '../data/business-types';
 
 type AnalysisStep = 'idle' | 'checking' | 'fetching' | 'analyzing' | 'done' | 'error';
 
@@ -116,6 +115,7 @@ export function CodebaseAnalyzer() {
   // API keys state
   const [showKeySettings, setShowKeySettings] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('anthropic');
+  const [selectedModel, setSelectedModel] = useState<string>(PROVIDER_MODELS.anthropic[0].id);
   const [newApiKey, setNewApiKey] = useState('');
   const [newGithubToken, setNewGithubToken] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -137,7 +137,16 @@ export function CodebaseAnalyzer() {
   const [providerComparisons, setProviderComparisons] = useState<ProviderComparison[]>([]);
 
   // Context
-  const { setVariableCosts, setFixedCosts, importCodebaseFeatures, setBusinessType, applyBusinessTypeTemplate } = usePricing();
+  const {
+    setVariableCosts,
+    setFixedCosts,
+    importCodebaseFeatures,
+    setBusinessType,
+    applyBusinessTypeTemplate,
+    setTiers,
+    showToast,
+  } = usePricing();
+  const { navigateTo } = useNavigation();
 
   // Request tracking to prevent race conditions
   const currentRequestRef = useRef<number>(0);
@@ -148,7 +157,7 @@ export function CodebaseAnalyzer() {
   const hasAIKey = hasAnyAIKey();
 
   // Find which provider has a key
-  const activeProvider = (['openai', 'anthropic', 'openrouter', 'minimax', 'glm'] as AIProvider[]).find(
+  const activeProvider = (['openai', 'anthropic', 'openrouter', 'groq', 'minimax', 'glm'] as AIProvider[]).find(
     p => storedKeys.keys[p]
   );
 
@@ -178,8 +187,8 @@ export function CodebaseAnalyzer() {
 
   // Handle analysis
   const handleAnalyze = useCallback(async () => {
-    const requestId = Date.now();
-    currentRequestRef.current = requestId;
+    // Use incrementing counter to prevent race conditions (Date.now() can be identical for rapid requests)
+    const requestId = ++currentRequestRef.current;
 
     setUrlError(null);
     setAnalysisError(null);
@@ -258,7 +267,11 @@ export function CodebaseAnalyzer() {
       setProviderComparisons(comparisons);
 
       setAnalysisStep('analyzing');
-      const result = await analyzeCodebase(payload);
+      const result = await analyzeCodebase(payload, {
+        provider: activeProvider,
+        apiKey: activeProvider ? storedKeys.keys[activeProvider]?.key : undefined,
+        model: selectedModel,
+      });
       if (currentRequestRef.current !== requestId) return;
 
       // Calculate actual cost from token usage
@@ -299,7 +312,8 @@ export function CodebaseAnalyzer() {
       setAnalysisError(enhancedError);
       setAnalysisStep('error');
     }
-  }, [repoUrl, hasAIKey, activeProvider]);
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  }, [repoUrl, hasAIKey, activeProvider, selectedModel, storedKeys]);
 
   // Apply analysis results to context
   const handleApplyResults = useCallback(() => {
@@ -346,7 +360,52 @@ export function CodebaseAnalyzer() {
     if (analysisResult.businessType) {
       setBusinessType(analysisResult.businessType.detected, analysisResult.businessType.confidence);
     }
-  }, [analysisResult, setVariableCosts, setFixedCosts, importCodebaseFeatures, setBusinessType]);
+
+    // Apply AI suggested tiers if available
+    if (analysisResult.suggestedTiers && analysisResult.suggestedTiers.length > 0) {
+      const USD_TO_MYR = 4.5;
+      const convertedTiers = analysisResult.suggestedTiers.map((st, i) => ({
+        id: `ai-tier-${i}-${Date.now()}`,
+        name: st.name,
+        tagline: st.description || `${st.name} tier`,
+        targetAudience: st.description || `Users looking for ${st.name.toLowerCase()} features`,
+        monthlyPriceMYR: Math.round(st.price * USD_TO_MYR),
+        annualPriceMYR: Math.round(st.price * USD_TO_MYR * 10), // ~17% annual discount
+        annualDiscount: 17,
+        status: 'active' as const,
+        limits: Object.entries(st.limits || {}).map(([key, value]) => ({
+          featureId: key,
+          limit: value,
+          unit: key,
+        })),
+        includedFeatures: st.features || [],
+        excludedFeatures: [],
+        highlightFeatures: (st.features || []).slice(0, 4),
+      }));
+      setTiers(convertedTiers);
+      // Tier display configs will be auto-initialized by PricingMockup's useEffect when tiers change
+    }
+
+    // Show success toast with summary
+    const appliedCount = variableCosts.length + fixedCosts.length;
+    const tierCount = analysisResult.suggestedTiers?.length || 0;
+    showToast(
+      'success',
+      `Applied ${features.length} features, ${appliedCount} costs${tierCount > 0 ? `, and ${tierCount} pricing tiers` : ''}`
+    );
+
+    // Navigate to COGS calculator
+    navigateTo('cogs');
+  }, [
+    analysisResult,
+    setVariableCosts,
+    setFixedCosts,
+    importCodebaseFeatures,
+    setBusinessType,
+    setTiers,
+    showToast,
+    navigateTo,
+  ]);
 
   // Apply business type template
   const handleApplyTemplate = useCallback(() => {
@@ -503,7 +562,7 @@ export function CodebaseAnalyzer() {
                 AI Provider
               </label>
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {(['openai', 'anthropic', 'openrouter', 'minimax', 'glm'] as AIProvider[]).map((provider) => {
+                {(['openai', 'anthropic', 'openrouter', 'groq', 'minimax', 'glm'] as AIProvider[]).map((provider) => {
                   const isSelected = selectedProvider === provider;
                   const hasKey = !!storedKeys.keys[provider];
                   const colors = PROVIDER_COLORS[provider];
@@ -511,7 +570,10 @@ export function CodebaseAnalyzer() {
                   return (
                     <button
                       key={provider}
-                      onClick={() => setSelectedProvider(provider)}
+                      onClick={() => {
+                        setSelectedProvider(provider);
+                        setSelectedModel(PROVIDER_MODELS[provider][0].id);
+                      }}
                       className={`relative flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 rounded-lg border-2 transition-colors ${
                         isSelected
                           ? `${colors.bg} ${colors.border}`
@@ -520,18 +582,64 @@ export function CodebaseAnalyzer() {
                     >
                       <ProviderLogo
                         provider={provider}
-                        size={18}
+                        size={provider === 'groq' ? 40 : 18}
                         className={isSelected ? colors.text : 'text-gray-500'}
                       />
-                      <span className={`text-sm font-medium whitespace-nowrap ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
-                        {PROVIDER_INFO[provider].name}
-                      </span>
+                      {provider !== 'groq' && (
+                        <span className={`text-sm font-medium whitespace-nowrap ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {PROVIDER_INFO[provider].name}
+                        </span>
+                      )}
                       {hasKey && (
                         <Check size={12} weight="bold" className="text-green-500" />
                       )}
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Model Selector - minimal pill design */}
+              <div className="mt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">Model</span>
+                  <div className="flex gap-1.5">
+                    {PROVIDER_MODELS[selectedProvider].map((model) => {
+                      const isSelected = selectedModel === model.id;
+                      const colors = PROVIDER_COLORS[selectedProvider];
+                      return (
+                        <button
+                          key={model.id}
+                          onClick={() => setSelectedModel(model.id)}
+                          className={`group relative px-2.5 py-1 text-xs rounded-full transition-all ${
+                            isSelected
+                              ? `${colors.bg} ${colors.text} font-medium`
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            {model.name}
+                            {model.badge === 'best' && (
+                              <span className={`px-1 py-0.5 text-[10px] font-semibold rounded ${
+                                isSelected ? 'bg-white/50' : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                BEST
+                              </span>
+                            )}
+                            {model.badge === 'fast' && (
+                              <Lightning size={10} weight="fill" className={isSelected ? '' : 'text-blue-500'} />
+                            )}
+                          </span>
+                          {/* Tooltip on hover */}
+                          {model.description && (
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              {model.description}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* API Key Input */}

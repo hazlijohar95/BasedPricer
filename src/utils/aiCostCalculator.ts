@@ -5,11 +5,9 @@
 
 import type { AIProvider } from '../services/api-keys';
 import {
-  getPricingForProvider,
   getPricingForModel,
   getDefaultModelsForComparison,
   DEFAULT_USD_TO_MYR_RATE,
-  type AIModelPricing,
 } from '../data/ai-token-pricing';
 
 export interface TokenUsage {

@@ -182,6 +182,30 @@ export const AI_PRICING: Record<AIProvider, ProviderPricing> = {
       },
     },
   },
+  groq: {
+    provider: 'groq',
+    providerName: 'Groq',
+    defaultModel: 'llama-3.3-70b-versatile',
+    models: {
+      'llama-3.3-70b-versatile': {
+        name: 'llama-3.3-70b-versatile',
+        displayName: 'Llama 3.3 70B',
+        inputPricePerMillion: 0.59,
+        outputPricePerMillion: 0.79,
+        lastUpdated: '2026-01-01',
+        contextWindow: 128000,
+        notes: 'Fast inference with Groq LPU',
+      },
+      'mixtral-8x7b-32768': {
+        name: 'mixtral-8x7b-32768',
+        displayName: 'Mixtral 8x7B',
+        inputPricePerMillion: 0.24,
+        outputPricePerMillion: 0.24,
+        lastUpdated: '2026-01-01',
+        contextWindow: 32768,
+      },
+    },
+  },
 };
 
 /**

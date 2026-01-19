@@ -9,12 +9,11 @@
  * - Regional endpoints or proxies
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   getCustomProviders,
   saveCustomProvider,
   removeCustomProvider,
-  clearConfigCache,
   type ProviderConfig,
   type ModelConfig,
 } from '../../services/config-loader';
@@ -28,14 +27,10 @@ export function CustomProviderManager({
   onProviderAdded,
   onProviderRemoved,
 }: CustomProviderManagerProps) {
-  const [customProviders, setCustomProviders] = useState<ProviderConfig[]>([]);
+  // Initialize with loaded providers (avoids setState in useEffect)
+  const [customProviders, setCustomProviders] = useState<ProviderConfig[]>(() => getCustomProviders());
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Load custom providers on mount
-  useEffect(() => {
-    setCustomProviders(getCustomProviders());
-  }, []);
 
   const handleSave = (provider: ProviderConfig) => {
     const result = saveCustomProvider(provider);

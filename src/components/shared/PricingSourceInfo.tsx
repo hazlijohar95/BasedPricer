@@ -13,7 +13,6 @@
 import { useState, useEffect } from 'react';
 import {
   loadProvidersConfig,
-  getModelPricing,
   getPricingFreshness,
   type ProviderConfig,
   type ModelConfig,
@@ -146,7 +145,7 @@ export function PricingSourceInfo({
           )}
           {showContributeLink && (
             <a
-              href="https://github.com/user/pricing-tools-oss/blob/main/CONTRIBUTING.md#updating-pricing-data"
+              href="https://github.com/hazlijohar95/BasedPricer/blob/main/CONTRIBUTING.md#updating-pricing-data"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 hover:underline"
@@ -265,7 +264,7 @@ export function AllProvidersPricingInfo() {
             Pricing data v{configMeta.version} · Last updated {configMeta.lastUpdated}
           </span>
           <a
-            href="https://github.com/user/pricing-tools-oss/blob/main/public/config/ai-providers.json"
+            href="https://github.com/hazlijohar95/BasedPricer/blob/main/public/config/ai-providers.json"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:underline"
@@ -293,7 +292,7 @@ export function AllProvidersPricingInfo() {
             <p className="mt-1 text-blue-700">
               AI provider pricing changes frequently. If you notice outdated prices,{' '}
               <a
-                href="https://github.com/user/pricing-tools-oss/blob/main/CONTRIBUTING.md#updating-pricing-data"
+                href="https://github.com/hazlijohar95/BasedPricer/blob/main/CONTRIBUTING.md#updating-pricing-data"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium underline hover:no-underline"

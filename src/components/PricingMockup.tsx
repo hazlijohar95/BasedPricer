@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   DotsSixVertical, Plus, Trash,
   ArrowsClockwise, CurrencyDollar, PaintBrush,
@@ -6,19 +6,24 @@ import {
   ArrowLeft, Star, Crown
 } from '@phosphor-icons/react';
 import { featureCategories } from '../data/features';
-import { PricingCard, FeatureComparisonTable, initializeTierConfigs } from './pricing';
-import type { TierConfig, BillingCycle, EditTab } from './pricing';
+import { PricingCard, FeatureComparisonTable } from './pricing';
+import type { BillingCycle, EditTab } from './pricing';
 import { BillingCycleToggle, Toggle, SearchInput } from './shared';
 import { getFeatureName, getFeatureLimit, calculateDiscount } from '../utils/features';
 import { DISCOUNT_PRESETS } from '../constants';
-import { usePricing } from '../context/PricingContext';
+import { usePricing, type TierDisplayConfig } from '../context/PricingContext';
 
 export function PricingMockup() {
-  // Get tiers and features from context
-  const { tiers, features } = usePricing();
+  // Get tiers, features, and tier display configs from context
+  const {
+    tiers,
+    features,
+    tierDisplayConfigs,
+    setTierDisplayConfig,
+    initializeTierDisplayConfigs,
+  } = usePricing();
 
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
-  const [tierConfigs, setTierConfigs] = useState<Record<string, TierConfig>>(initializeTierConfigs);
   const [editingTier, setEditingTier] = useState<string | null>(null);
   const [editTab, setEditTab] = useState<EditTab>('pricing');
   const [draggedFeature, setDraggedFeature] = useState<string | null>(null);
@@ -26,20 +31,66 @@ export function PricingMockup() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [ctaClicked, setCtaClicked] = useState<string | null>(null);
 
+  // Initialize tier display configs if tiers exist but configs don't
+  useEffect(() => {
+    const hasConfigs = Object.keys(tierDisplayConfigs).length > 0;
+    const hasTiers = tiers.length > 0;
+    if (hasTiers && !hasConfigs) {
+      initializeTierDisplayConfigs();
+    }
+  }, [tiers, tierDisplayConfigs, initializeTierDisplayConfigs]);
+
   const visibleTiers = tiers.filter(t => t.status === 'active' || t.status === 'coming_soon');
 
-  const updateTierConfig = (tierId: string, updates: Partial<TierConfig>) => {
-    setTierConfigs(prev => ({ ...prev, [tierId]: { ...prev[tierId], ...updates } }));
+  // Helper to get a tier's display config with fallback
+  const getTierConfig = useCallback((tierId: string): TierDisplayConfig => {
+    if (tierDisplayConfigs[tierId]) {
+      return tierDisplayConfigs[tierId];
+    }
+    // Create fallback from tier data if config doesn't exist
+    const tier = tiers.find(t => t.id === tierId);
+    const tierIndex = tiers.findIndex(t => t.id === tierId);
+    if (tier) {
+      const isFirstPaidTier = tier.monthlyPriceMYR > 0 && tierIndex <= 1;
+      return {
+        highlighted: isFirstPaidTier,
+        highlightedFeatures: [...tier.highlightFeatures],
+        ctaText: tier.monthlyPriceMYR === 0 ? 'Get Started Free'
+          : isFirstPaidTier ? 'Start Free Trial'
+          : 'Contact Sales',
+        ctaStyle: isFirstPaidTier ? 'primary' : tier.monthlyPriceMYR === 0 ? 'outline' : 'secondary',
+        monthlyPrice: tier.monthlyPriceMYR,
+        annualPrice: tier.annualPriceMYR,
+        tagline: tier.tagline,
+        badgeText: 'Most Popular',
+        showLimits: true,
+        maxVisibleFeatures: 6,
+      };
+    }
+    // Ultimate fallback for edge cases
+    return {
+      highlighted: false,
+      highlightedFeatures: [],
+      ctaText: 'Get Started',
+      ctaStyle: 'secondary',
+      badgeText: '',
+      showLimits: true,
+      maxVisibleFeatures: 6,
+      monthlyPrice: 0,
+      annualPrice: 0,
+      tagline: '',
+    };
+  }, [tierDisplayConfigs, tiers]);
+
+  const updateTierConfig = (tierId: string, updates: Partial<TierDisplayConfig>) => {
+    setTierDisplayConfig(tierId, updates);
   };
 
   const setHighlightedTier = (tierId: string, highlighted: boolean) => {
     if (highlighted) {
-      setTierConfigs(prev => {
-        const newConfigs = { ...prev };
-        Object.keys(newConfigs).forEach(id => {
-          newConfigs[id] = { ...newConfigs[id], highlighted: id === tierId };
-        });
-        return newConfigs;
+      // Only one tier can be highlighted at a time
+      Object.keys(tierDisplayConfigs).forEach(id => {
+        setTierDisplayConfig(id, { highlighted: id === tierId });
       });
     } else {
       updateTierConfig(tierId, { highlighted: false });
@@ -47,19 +98,19 @@ export function PricingMockup() {
   };
 
   const addFeatureToHighlights = (tierId: string, featureId: string) => {
-    const config = tierConfigs[tierId];
+    const config = getTierConfig(tierId);
     if (!config.highlightedFeatures.includes(featureId)) {
       updateTierConfig(tierId, { highlightedFeatures: [...config.highlightedFeatures, featureId] });
     }
   };
 
   const removeFeatureFromHighlights = (tierId: string, featureId: string) => {
-    const config = tierConfigs[tierId];
+    const config = getTierConfig(tierId);
     updateTierConfig(tierId, { highlightedFeatures: config.highlightedFeatures.filter(f => f !== featureId) });
   };
 
   const moveFeature = (tierId: string, fromIndex: number, toIndex: number) => {
-    const config = tierConfigs[tierId];
+    const config = getTierConfig(tierId);
     const newFeatures = [...config.highlightedFeatures];
     const [moved] = newFeatures.splice(fromIndex, 1);
     newFeatures.splice(toIndex, 0, moved);
@@ -69,13 +120,20 @@ export function PricingMockup() {
   const resetTierConfig = (tierId: string) => {
     const tier = tiers.find(t => t.id === tierId);
     if (tier) {
-      setTierConfigs(prev => ({
-        ...prev,
-        [tierId]: {
-          ...initializeTierConfigs()[tierId],
-          highlighted: prev[tierId].highlighted,
-        }
-      }));
+      const currentConfig = getTierConfig(tierId);
+      // Reset to defaults from tier, but keep highlighted status
+      updateTierConfig(tierId, {
+        highlightedFeatures: [...tier.highlightFeatures],
+        ctaText: tier.monthlyPriceMYR === 0 ? 'Get Started Free' : 'Start Free Trial',
+        ctaStyle: tier.monthlyPriceMYR === 0 ? 'outline' : 'primary',
+        monthlyPrice: tier.monthlyPriceMYR,
+        annualPrice: tier.annualPriceMYR,
+        tagline: tier.tagline,
+        badgeText: 'Most Popular',
+        showLimits: true,
+        maxVisibleFeatures: 6,
+        highlighted: currentConfig.highlighted,
+      });
     }
   };
 
@@ -84,7 +142,7 @@ export function PricingMockup() {
   const handleDragOver = (e: React.DragEvent, tierId: string, targetIndex: number) => {
     e.preventDefault();
     if (!draggedFeature) return;
-    const config = tierConfigs[tierId];
+    const config = getTierConfig(tierId);
     const currentIndex = config.highlightedFeatures.indexOf(draggedFeature);
     if (currentIndex !== -1 && currentIndex !== targetIndex) {
       moveFeature(tierId, currentIndex, targetIndex);
@@ -101,7 +159,7 @@ export function PricingMockup() {
   };
 
   const editingTierData = editingTier ? tiers.find(t => t.id === editingTier) : null;
-  const editingConfig = editingTier ? tierConfigs[editingTier] : null;
+  const editingConfig = editingTier ? getTierConfig(editingTier) : null;
 
   const filteredAvailableFeatures = useMemo(() => {
     if (!editingTierData || !editingConfig) return {};
@@ -123,13 +181,13 @@ export function PricingMockup() {
 
   const averageDiscount = useMemo(() => {
     const discounts = visibleTiers
-      .map(t => tierConfigs[t.id])
+      .map(t => getTierConfig(t.id))
       .filter(c => c.monthlyPrice > 0)
       .map(c => calculateDiscount(c.monthlyPrice, c.annualPrice));
     return discounts.length > 0
       ? Math.round(discounts.reduce((a, b) => a + b, 0) / discounts.length)
       : 17;
-  }, [tierConfigs, visibleTiers]);
+  }, [visibleTiers, getTierConfig]);
 
   const handleCtaClick = (tierId: string) => {
     setCtaClicked(tierId);
@@ -555,7 +613,7 @@ export function PricingMockup() {
           <PricingCard
             key={tier.id}
             tier={tier}
-            config={tierConfigs[tier.id]}
+            config={getTierConfig(tier.id)}
             billingCycle={billingCycle}
             ctaClicked={ctaClicked === tier.id}
             onCardClick={() => setEditingTier(tier.id)}

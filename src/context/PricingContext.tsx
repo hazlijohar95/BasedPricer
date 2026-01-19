@@ -11,10 +11,26 @@ import { defaultTiers, type Tier } from '../data/tiers';
 import { features as defaultFeatures, type Feature } from '../data/features';
 import { type BusinessType, type PricingModelType, BUSINESS_TYPES } from '../data/business-types';
 import { getTierTemplatesForBusinessType, convertTemplatesToTiers } from '../data/tier-templates';
+import type { ToastData } from '../components/shared/Toast';
 
 // ============================================================================
 // Types
 // ============================================================================
+
+export type CtaStyle = 'primary' | 'secondary' | 'outline';
+
+export interface TierDisplayConfig {
+  highlighted: boolean;
+  highlightedFeatures: string[];
+  ctaText: string;
+  ctaStyle: CtaStyle;
+  badgeText: string;
+  showLimits: boolean;
+  maxVisibleFeatures: number;
+  monthlyPrice: number;
+  annualPrice: number;
+  tagline: string;
+}
 
 export interface PricingState {
   // Cost data (from COGS)
@@ -30,6 +46,9 @@ export interface PricingState {
 
   // Feature data
   features: Feature[];
+
+  // Tier display configs (for mockup persistence)
+  tierDisplayConfigs: Record<string, TierDisplayConfig>;
 
   // Pricing scenario (from Calculator)
   utilizationRate: number;
@@ -71,6 +90,11 @@ export interface PricingContextValue extends PricingState {
   setTiers: (tiers: Tier[]) => void;
   updateTier: (tierId: string, updates: Partial<Tier>) => void;
 
+  // Actions - Tier Display Configs (for mockup)
+  setTierDisplayConfig: (tierId: string, config: Partial<TierDisplayConfig>) => void;
+  setTierDisplayConfigs: (configs: Record<string, TierDisplayConfig>) => void;
+  initializeTierDisplayConfigs: () => void;
+
   // Actions - Features
   setFeatures: (features: Feature[]) => void;
   addFeature: (feature: Feature) => void;
@@ -94,13 +118,50 @@ export interface PricingContextValue extends PricingState {
 
   // Actions - Utility
   resetToDefaults: () => void;
+  resetToEmpty: () => void;
   loadPreset: (preset: { variableCosts: VariableCostItem[]; fixedCosts: FixedCostItem[] }) => void;
+
+  // Toast system
+  toasts: ToastData[];
+  showToast: (type: 'success' | 'error' | 'info', message: string, duration?: number) => void;
+  dismissToast: (id: string) => void;
+}
+
+// ============================================================================
+// Tier Display Config Helpers
+// ============================================================================
+
+function createDefaultTierDisplayConfig(tier: Tier, index: number): TierDisplayConfig {
+  const isFirstPaidTier = tier.monthlyPriceMYR > 0 && index <= 1;
+  return {
+    highlighted: isFirstPaidTier,
+    highlightedFeatures: [...tier.highlightFeatures],
+    ctaText: tier.monthlyPriceMYR === 0 ? 'Get Started Free'
+      : isFirstPaidTier ? 'Start Free Trial'
+      : 'Contact Sales',
+    ctaStyle: isFirstPaidTier ? 'primary' : tier.monthlyPriceMYR === 0 ? 'outline' : 'secondary',
+    monthlyPrice: tier.monthlyPriceMYR,
+    annualPrice: tier.annualPriceMYR,
+    tagline: tier.tagline,
+    badgeText: 'Most Popular',
+    showLimits: true,
+    maxVisibleFeatures: 6,
+  };
+}
+
+function createTierDisplayConfigsFromTiers(tiers: Tier[]): Record<string, TierDisplayConfig> {
+  const configs: Record<string, TierDisplayConfig> = {};
+  tiers.forEach((tier, index) => {
+    configs[tier.id] = createDefaultTierDisplayConfig(tier, index);
+  });
+  return configs;
 }
 
 // ============================================================================
 // Default Presets
 // ============================================================================
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const COST_PRESETS = {
   'ai-saas': {
     name: 'AI/Document SaaS',
@@ -175,12 +236,86 @@ const DEFAULT_STATE: PricingState = {
   selectedPrice: 25,
   tiers: defaultTiers,
   features: defaultFeatures,
+  tierDisplayConfigs: createTierDisplayConfigsFromTiers(defaultTiers),
   utilizationRate: 0.7,
   tierDistribution: {
     freemium: 50,
     basic: 30,
     pro: 15,
     enterprise: 5,
+  },
+  businessType: null,
+  businessTypeConfidence: 0,
+  pricingModelType: 'feature_tiered',
+};
+
+// Empty state for fresh start
+const EMPTY_STATE: PricingState = {
+  variableCosts: [],
+  fixedCosts: [],
+  customerCount: 100,
+  selectedPrice: 0,
+  tiers: [
+    {
+      id: 'free',
+      name: 'Free',
+      tagline: 'Get started',
+      targetAudience: 'Individual users',
+      monthlyPriceMYR: 0,
+      annualPriceMYR: 0,
+      annualDiscount: 0,
+      status: 'active',
+      limits: [],
+      includedFeatures: [],
+      excludedFeatures: [],
+      highlightFeatures: [],
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      tagline: 'For professionals',
+      targetAudience: 'Power users',
+      monthlyPriceMYR: 0,
+      annualPriceMYR: 0,
+      annualDiscount: 20,
+      status: 'active',
+      limits: [],
+      includedFeatures: [],
+      excludedFeatures: [],
+      highlightFeatures: [],
+    },
+  ],
+  features: [],
+  tierDisplayConfigs: {
+    free: {
+      highlighted: false,
+      highlightedFeatures: [],
+      ctaText: 'Get Started Free',
+      ctaStyle: 'outline',
+      badgeText: '',
+      showLimits: true,
+      maxVisibleFeatures: 6,
+      monthlyPrice: 0,
+      annualPrice: 0,
+      tagline: 'Get started',
+    },
+    pro: {
+      highlighted: true,
+      highlightedFeatures: [],
+      ctaText: 'Start Free Trial',
+      ctaStyle: 'primary',
+      badgeText: 'Most Popular',
+      showLimits: true,
+      maxVisibleFeatures: 6,
+      monthlyPrice: 0,
+      annualPrice: 0,
+      tagline: 'For professionals',
+    },
+  },
+  utilizationRate: 0.7,
+  tierDistribution: {
+    free: 70,
+    pro: 30,
   },
   businessType: null,
   businessTypeConfidence: 0,
@@ -225,6 +360,9 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     const stored = loadFromStorage();
     return stored ? { ...DEFAULT_STATE, ...stored } : DEFAULT_STATE;
   });
+
+  // Toast state (not persisted)
+  const [toasts, setToasts] = useState<ToastData[]>([]);
 
   // Save to localStorage on state change
   useEffect(() => {
@@ -344,6 +482,47 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // -------------------------------------------------------------------------
+  // Actions - Tier Display Configs
+  // -------------------------------------------------------------------------
+
+  const setTierDisplayConfig = useCallback((tierId: string, config: Partial<TierDisplayConfig>) => {
+    setState(prev => {
+      // Validate that the tier exists
+      const tier = prev.tiers.find(t => t.id === tierId);
+      if (!tier) {
+        console.warn(`setTierDisplayConfig: Tier '${tierId}' not found, skipping update`);
+        return prev;
+      }
+
+      const tierIndex = prev.tiers.findIndex(t => t.id === tierId);
+      const existingConfig = prev.tierDisplayConfigs[tierId];
+      const baseConfig = existingConfig || createDefaultTierDisplayConfig(tier, tierIndex);
+
+      return {
+        ...prev,
+        tierDisplayConfigs: {
+          ...prev.tierDisplayConfigs,
+          [tierId]: {
+            ...baseConfig,
+            ...config,
+          },
+        },
+      };
+    });
+  }, []);
+
+  const setTierDisplayConfigs = useCallback((configs: Record<string, TierDisplayConfig>) => {
+    setState(prev => ({ ...prev, tierDisplayConfigs: configs }));
+  }, []);
+
+  const initializeTierDisplayConfigs = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      tierDisplayConfigs: createTierDisplayConfigsFromTiers(prev.tiers),
+    }));
+  }, []);
+
+  // -------------------------------------------------------------------------
   // Actions - Features
   // -------------------------------------------------------------------------
 
@@ -446,6 +625,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
             targetAudience: 'Describe target audience',
             monthlyPriceMYR: 0,
             annualPriceMYR: 0,
+            annualDiscount: 17,
             status: 'coming_soon',
             limits: [],
             includedFeatures: [],
@@ -473,6 +653,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
           targetAudience: 'Describe target audience',
           monthlyPriceMYR: 0,
           annualPriceMYR: 0,
+          annualDiscount: 17,
           status: 'coming_soon',
           limits: [],
           includedFeatures: [],
@@ -499,6 +680,13 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const resetToEmpty = useCallback(() => {
+    setState(EMPTY_STATE);
+    // Clear all related storage keys
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('cynco-pricing-costs');
+  }, []);
+
   const loadPreset = useCallback((preset: { variableCosts: VariableCostItem[]; fixedCosts: FixedCostItem[] }) => {
     setState(prev => ({
       ...prev,
@@ -508,10 +696,23 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // -------------------------------------------------------------------------
-  // Context value
+  // Actions - Toast
   // -------------------------------------------------------------------------
 
-  const value: PricingContextValue = {
+  const showToast = useCallback((type: 'success' | 'error' | 'info', message: string, duration?: number) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setToasts(prev => [...prev, { id, type, message, duration }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Context value (memoized to prevent unnecessary re-renders)
+  // -------------------------------------------------------------------------
+
+  const value = useMemo<PricingContextValue>(() => ({
     // State
     ...state,
     // Computed
@@ -519,7 +720,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     margin,
     profit,
     marginStatus,
-    // Actions
+    // Actions (all wrapped in useCallback, stable references)
     setVariableCosts,
     setFixedCosts,
     updateVariableCost,
@@ -532,6 +733,9 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     setSelectedPrice,
     setTiers,
     updateTier,
+    setTierDisplayConfig,
+    setTierDisplayConfigs,
+    initializeTierDisplayConfigs,
     setFeatures,
     addFeature,
     updateFeature,
@@ -546,8 +750,54 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     addTier,
     removeTier,
     resetToDefaults,
+    resetToEmpty,
     loadPreset,
-  };
+    // Toast
+    toasts,
+    showToast,
+    dismissToast,
+  }), [
+    state,
+    costs,
+    margin,
+    profit,
+    marginStatus,
+    toasts,
+    // Actions are stable (useCallback with empty or stable deps)
+    setVariableCosts,
+    setFixedCosts,
+    updateVariableCost,
+    updateFixedCost,
+    addVariableCost,
+    addFixedCost,
+    removeVariableCost,
+    removeFixedCost,
+    setCustomerCount,
+    setSelectedPrice,
+    setTiers,
+    updateTier,
+    setTierDisplayConfig,
+    setTierDisplayConfigs,
+    initializeTierDisplayConfigs,
+    setFeatures,
+    addFeature,
+    updateFeature,
+    removeFeature,
+    importCodebaseFeatures,
+    setUtilizationRate,
+    setTierDistribution,
+    setBusinessType,
+    setPricingModelType,
+    applyBusinessTypeTemplate,
+    setTierCount,
+    addTier,
+    removeTier,
+    resetToDefaults,
+    resetToEmpty,
+    loadPreset,
+    showToast,
+    dismissToast,
+  ]);
 
   return (
     <PricingContext.Provider value={value}>
@@ -560,6 +810,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
 // Hook
 // ============================================================================
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePricing(): PricingContextValue {
   const context = useContext(PricingContext);
   if (!context) {

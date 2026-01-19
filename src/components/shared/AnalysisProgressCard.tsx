@@ -17,7 +17,7 @@ interface AnalysisProgressCardProps {
   modelName?: string;
 }
 
-const STEP_CONFIG = {
+const STEP_CONFIG: Record<'checking' | 'fetching' | 'analyzing', { label: string; description: string; icon: typeof Circle }> = {
   checking: {
     label: 'Checking repository access',
     description: 'Verifying repository exists and is accessible',
@@ -58,10 +58,9 @@ export function AnalysisProgressCard({
       {/* Progress steps */}
       <div className="space-y-3">
         {steps.map((s, index) => {
-          const config = STEP_CONFIG[s];
+          const config = STEP_CONFIG[s as keyof typeof STEP_CONFIG];
           const isActive = s === step;
           const isComplete = index < currentStepIndex;
-          const isPending = index > currentStepIndex;
 
           return (
             <div

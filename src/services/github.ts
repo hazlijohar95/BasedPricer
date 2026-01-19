@@ -59,13 +59,13 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
   // Handle various GitHub URL formats
   const patterns = [
     // https://github.com/owner/repo
-    /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/?$/,
+    /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/?$/,
     // https://github.com/owner/repo.git
-    /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\.git$/,
+    /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\.git$/,
     // git@github.com:owner/repo.git
-    /^git@github\.com:([^\/]+)\/([^\/]+)\.git$/,
+    /^git@github\.com:([^/]+)\/([^/]+)\.git$/,
     // owner/repo format
-    /^([^\/]+)\/([^\/]+)$/,
+    /^([^/]+)\/([^/]+)$/,
   ];
 
   for (const pattern of patterns) {
@@ -451,7 +451,7 @@ export async function checkRepoAccess(url: string): Promise<{ accessible: boolea
     }
 
     return { accessible: false, error: `GitHub API error: ${response.status}` };
-  } catch (e) {
+  } catch {
     return { accessible: false, error: 'Failed to connect to GitHub' };
   }
 }

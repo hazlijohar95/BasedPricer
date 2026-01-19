@@ -1,21 +1,17 @@
 // URL-safe encoding/decoding for shareable report links
 // Uses compression + multiple storage strategies for optimal sharing
+// Now uses Zod schemas for runtime validation
 
 import LZString from 'lz-string';
 import type { PricingState } from '../context/PricingContext';
+import {
+  type ReportData as SchemaReportData,
+  isValidReportData as zodIsValidReportData,
+  parseReportDataSafe,
+} from '../schemas/reports';
 
-export interface ReportData {
-  projectName: string;
-  createdAt: string;
-  state: PricingState;
-  notes: {
-    accountant?: string;
-    investor?: string;
-    engineer?: string;
-    marketer?: string;
-  };
-  selectedMockup?: string;
-}
+// Re-export the type from schemas for backwards compatibility
+export type ReportData = SchemaReportData;
 
 // Storage key prefix for localStorage
 const STORAGE_PREFIX = 'pt-report-';
@@ -43,6 +39,7 @@ export function encodeReportCompressed(data: ReportData): string {
 
 /**
  * Decode report data from compressed URL-safe string
+ * Includes Zod validation for safety
  */
 export function decodeReportCompressed(compressed: string): ReportData {
   try {
@@ -50,7 +47,15 @@ export function decodeReportCompressed(compressed: string): ReportData {
     if (!json) {
       throw new Error('Decompression failed');
     }
-    return JSON.parse(json) as ReportData;
+    const parsed = JSON.parse(json);
+
+    // Use Zod-based safe parsing which handles legacy data with partial defaults
+    const validated = parseReportDataSafe(parsed);
+    if (!validated) {
+      throw new Error('Invalid report structure');
+    }
+
+    return validated;
   } catch (e) {
     console.error('Failed to decode report:', e);
     throw new Error('Invalid report data');
@@ -105,6 +110,7 @@ export function storeReport(data: ReportData): string {
 
 /**
  * Retrieve report data from localStorage by ID
+ * Includes Zod validation for safety
  */
 export function retrieveReport(id: string): ReportData | null {
   const storageKey = STORAGE_PREFIX + id;
@@ -113,7 +119,10 @@ export function retrieveReport(id: string): ReportData | null {
     if (!stored) return null;
 
     const { data } = JSON.parse(stored);
-    return data as ReportData;
+
+    // Use Zod-based safe parsing which handles legacy data
+    const validated = parseReportDataSafe(data);
+    return validated;
   } catch (e) {
     console.error('Failed to retrieve report:', e);
     return null;
@@ -259,16 +268,10 @@ export function createReportData(
 
 /**
  * Validate that a report data object has required fields
+ * Now uses Zod schema validation for consistency
  */
 export function isValidReportData(data: unknown): data is ReportData {
-  if (!data || typeof data !== 'object') return false;
-  const report = data as ReportData;
-  return (
-    typeof report.projectName === 'string' &&
-    typeof report.createdAt === 'string' &&
-    report.state !== null &&
-    typeof report.state === 'object'
-  );
+  return zodIsValidReportData(data);
 }
 
 /**

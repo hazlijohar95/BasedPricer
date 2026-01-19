@@ -89,6 +89,19 @@ export function GLMLogo({ size = 20, className = '' }: LogoProps) {
   );
 }
 
+// Groq - Fast AI inference with custom LPU hardware
+export function GroqLogo({ size = 20, className = '' }: LogoProps) {
+  return (
+    <img
+      src="/logos/groq.webp"
+      width={size}
+      height={size}
+      alt="Groq"
+      className={`object-contain ${className}`}
+    />
+  );
+}
+
 export function GitHubLogo({ size = 20, className = '' }: LogoProps) {
   return (
     <svg
@@ -112,6 +125,8 @@ export function ProviderLogo({ provider, size = 20, className = '' }: { provider
       return <AnthropicLogo size={size} className={className} />;
     case 'openrouter':
       return <OpenRouterLogo size={size} className={className} />;
+    case 'groq':
+      return <GroqLogo size={size} className={className} />;
     case 'minimax':
       return <MiniMaxLogo size={size} className={className} />;
     case 'glm':
@@ -120,6 +135,7 @@ export function ProviderLogo({ provider, size = 20, className = '' }: { provider
 }
 
 // Provider colors for consistent branding
+// eslint-disable-next-line react-refresh/only-export-components
 export const PROVIDER_COLORS: Record<AIProvider, { bg: string; text: string; border: string; accent: string }> = {
   openai: {
     bg: 'bg-emerald-50',
@@ -138,6 +154,12 @@ export const PROVIDER_COLORS: Record<AIProvider, { bg: string; text: string; bor
     text: 'text-purple-700',
     border: 'border-purple-200',
     accent: 'text-purple-600',
+  },
+  groq: {
+    bg: 'bg-red-50',
+    text: 'text-red-700',
+    border: 'border-red-200',
+    accent: 'text-red-600',
   },
   minimax: {
     bg: 'bg-blue-50',

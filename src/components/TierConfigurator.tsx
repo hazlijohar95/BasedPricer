@@ -1,11 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, DownloadSimple, MagnifyingGlass, Plus, X, Star, Infinity, ArrowCounterClockwise, Lightning } from '@phosphor-icons/react';
+import { Copy, DownloadSimple, MagnifyingGlass, Plus, X, Star, Infinity as InfinityIcon, ArrowCounterClockwise, Lightning } from '@phosphor-icons/react';
 import { calculateTierVariableCosts, type Tier, type TierLimit } from '../data/tiers';
 import { featureCategories, type FeatureCategory } from '../data/features';
 import { usePricing } from '../context/PricingContext';
+import { useNavigation } from '../context/NavigationContext';
 import { deriveCostRatesFromVariableCosts } from '../utils/costRates';
-import { BUSINESS_TYPES, type BusinessType } from '../data/business-types';
-import { getTierTemplatesForBusinessType, getRecommendedTierCount } from '../data/tier-templates';
+import { BUSINESS_TYPES } from '../data/business-types';
+import { getRecommendedTierCount } from '../data/tier-templates';
+import { EmptyState, TabToggle, type TabOption } from './shared';
+import { TierCardsGrid } from './tiers';
 
 type ViewMode = 'overview' | 'limits' | 'features' | 'highlights';
 
@@ -23,8 +26,8 @@ export function TierConfigurator() {
     applyBusinessTypeTemplate,
     setTierCount,
     addTier,
-    removeTier,
   } = usePricing();
+  const { navigateTo } = useNavigation();
 
   // Derive cost rates from context's variableCosts (single source of truth)
   // This ensures TierConfigurator uses the same rates as COGSCalculator and PricingCalculator
@@ -36,7 +39,8 @@ export function TierConfigurator() {
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const selectedTier = tiers.find(t => t.id === selectedTierId)!;
+  // Safely get selected tier, falling back to first tier if selection is invalid
+  const selectedTier = tiers.find(t => t.id === selectedTierId) ?? tiers[0];
 
   // Wrapper to use context's updateTier
   const updateTier = useCallback((tierId: string, updates: Partial<Tier>) => {
@@ -58,7 +62,7 @@ export function TierConfigurator() {
       return { ...t, limits: [...t.limits, newLimit] };
     });
     setTiers(newTiers);
-  }, [tiers, setTiers]);
+  }, [tiers, setTiers, features]);
 
   const toggleFeature = useCallback((tierId: string, featureId: string, included: boolean) => {
     const newTiers = tiers.map(t => {
@@ -154,6 +158,25 @@ export function TierConfigurator() {
     a.download = 'tier-config.json';
     a.click();
   }, [tiers]);
+
+  // Show empty state when no tiers exist
+  if (tiers.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Tier Configurator</h1>
+          <p className="text-gray-500 text-sm mt-1">Configure limits, features, and highlights for each tier</p>
+        </div>
+        <div className="card">
+          <EmptyState
+            type="tiers"
+            onAnalyze={() => navigateTo('analyze')}
+            onAddManually={() => addTier()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -260,93 +283,25 @@ export function TierConfigurator() {
       </div>
 
       {/* Tier Cards */}
-      <div className={`grid gap-4 ${
-        tiers.length === 2 ? 'grid-cols-2' :
-        tiers.length === 3 ? 'grid-cols-3' :
-        tiers.length === 5 ? 'grid-cols-5' :
-        'grid-cols-4'
-      }`}>
-        {tiers.map((tier) => {
-          const tierData = allTierCosts.get(tier.id);
-          const tierCostsTotal = tierData?.total ?? 0;
-          const tierMargin = tierData?.margin ?? 0;
-          const isSelected = selectedTierId === tier.id;
-
-          return (
-            <button
-              key={tier.id}
-              onClick={() => setSelectedTierId(tier.id)}
-              className={`card card-interactive p-5 text-left transition-all duration-200 active:scale-[0.98] ${
-                isSelected ? 'ring-2 ring-[#253ff6] ring-offset-2' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-gray-900">{tier.name}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-[0.2rem] ${
-                  tier.status === 'active' ? 'bg-emerald-50 text-emerald-600' :
-                  tier.status === 'coming_soon' ? 'bg-amber-50 text-amber-600' :
-                  'bg-gray-100 text-gray-500'
-                }`}>
-                  {tier.status === 'active' ? 'Active' : tier.status === 'coming_soon' ? 'Soon' : 'Internal'}
-                </span>
-              </div>
-
-              <p className="text-2xl font-semibold text-gray-900">
-                {tier.monthlyPriceMYR === 0 && tier.id !== 'freemium' ? (
-                  <span className="text-gray-400 text-lg">TBD</span>
-                ) : tier.id === 'enterprise' ? (
-                  <span className="text-lg">Custom</span>
-                ) : (
-                  <>MYR {tier.monthlyPriceMYR}</>
-                )}
-              </p>
-
-              <div className="mt-4 pt-4 border-t border-[#e4e4e4] space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">COGS</span>
-                  <span className="font-medium text-gray-700">MYR {tierCostsTotal.toFixed(2)}</span>
-                </div>
-                {tier.monthlyPriceMYR > 0 && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">Margin</span>
-                    <span className={`font-medium ${
-                      tierMargin >= 65 ? 'text-emerald-600' : tierMargin >= 50 ? 'text-amber-600' : 'text-red-600'
-                    }`}>
-                      {tierMargin.toFixed(0)}%
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Features</span>
-                  <span className="font-medium text-gray-700">{tier.includedFeatures.length}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Highlights</span>
-                  <span className="font-medium text-[#253ff6]">{tier.highlightFeatures.length}</span>
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      <TierCardsGrid
+        tiers={tiers}
+        allTierCosts={allTierCosts}
+        selectedTierId={selectedTierId}
+        onSelect={setSelectedTierId}
+      />
 
       {/* View Mode Tabs */}
-      <div className="card p-1.5 flex gap-1">
-        {[
+      <TabToggle<ViewMode>
+        options={[
           { id: 'overview', label: 'Overview' },
           { id: 'limits', label: 'Usage Limits' },
           { id: 'features', label: 'Feature Access' },
           { id: 'highlights', label: 'Highlights' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setViewMode(tab.id as ViewMode)}
-            className={`tab-pill flex-1 ${viewMode === tab.id ? 'active' : ''}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        ] as TabOption<ViewMode>[]}
+        value={viewMode}
+        onChange={setViewMode}
+        fullWidth
+      />
 
       {/* Content based on view mode */}
       {viewMode === 'overview' && (
@@ -414,18 +369,35 @@ export function TierConfigurator() {
           <div className="card p-6">
             <h3 className="font-medium text-gray-900 mb-4">Cost Analysis</h3>
             <div className="space-y-3">
-              <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
-                <span className="text-sm text-gray-600">Extraction costs</span>
-                <span className="text-sm font-medium text-gray-900">MYR {costs.extraction.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
-                <span className="text-sm text-gray-600">Email costs</span>
-                <span className="text-sm font-medium text-gray-900">MYR {costs.email.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
-                <span className="text-sm text-gray-600">Storage costs</span>
-                <span className="text-sm font-medium text-gray-900">MYR {costs.storage.toFixed(2)}</span>
-              </div>
+              {/* Dynamic cost items from variableCosts */}
+              {variableCosts.length > 0 ? (
+                variableCosts.map((cost) => {
+                  // Calculate estimated cost for this tier based on utilization
+                  const estimatedCost = cost.costPerUnit * (cost.usagePerCustomer || 1) * utilizationRate;
+                  return (
+                    <div key={cost.id} className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
+                      <span className="text-sm text-gray-600">{cost.name}</span>
+                      <span className="text-sm font-medium text-gray-900">MYR {estimatedCost.toFixed(2)}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <>
+                  {/* Fallback to legacy cost display if no variableCosts defined */}
+                  <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
+                    <span className="text-sm text-gray-600">Extraction costs</span>
+                    <span className="text-sm font-medium text-gray-900">MYR {costs.extraction.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
+                    <span className="text-sm text-gray-600">Email costs</span>
+                    <span className="text-sm font-medium text-gray-900">MYR {costs.email.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between py-2.5 border-b border-[#e4e4e4]">
+                    <span className="text-sm text-gray-600">Storage costs</span>
+                    <span className="text-sm font-medium text-gray-900">MYR {costs.storage.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between py-3 bg-gray-50 rounded-[0.2rem] px-4 -mx-2">
                 <span className="font-medium text-gray-900">Total Variable COGS</span>
                 <span className="font-semibold text-[#253ff6]">MYR {costs.total.toFixed(2)}</span>
@@ -500,7 +472,7 @@ export function TierConfigurator() {
                           : 'bg-white border border-[#e4e4e4] text-gray-600 hover:border-[#253ff6]'
                       }`}
                     >
-                      <Infinity size={14} weight="bold" />
+                      <InfinityIcon size={14} weight="bold" />
                       {isUnlimited ? 'Unlimited' : 'Set unlimited'}
                     </button>
                   </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CaretDown, CurrencyDollar, Coins, Info, Check, Lightning } from '@phosphor-icons/react';
+import { CaretDown, CurrencyDollar, Coins, Check } from '@phosphor-icons/react';
 import { ProviderLogo } from '../ProviderLogos';
 import type { AIProvider } from '../../services/api-keys';
 import {
@@ -135,10 +135,13 @@ interface RealTimeCostTrackerProps {
 
 export function RealTimeCostTracker({
   currentCost,
-  provider,
-  modelName,
+  provider: _provider,
+  modelName: _modelName,
   isRunning,
 }: RealTimeCostTrackerProps) {
+  // Suppress unused var warning - these props are for future display enhancements
+  void _provider;
+  void _modelName;
   return (
     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
       <Coins size={14} className="text-gray-500" />
