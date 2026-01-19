@@ -1,0 +1,52 @@
+{
+  "name": "@basedpricer/cli",
+  "version": "1.0.0",
+  "description": "CLI tool for BasedPricer - analyze codebases, calculate COGS, and generate pricing reports",
+  "author": "hazlijohar95",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "basedpricer": "./bin/basedpricer.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@basedpricer/core": "workspace:*",
+    "chalk": "^5.4.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "conf": "^13.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.17"
+  },
+  "keywords": [
+    "cli",
+    "pricing",
+    "saas",
+    "cogs",
+    "calculator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hazlijohar95/BasedPricer.git",
+    "directory": "packages/cli"
+  }
+}

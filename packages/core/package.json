@@ -1,0 +1,55 @@
+{
+  "name": "@basedpricer/core",
+  "version": "1.0.0",
+  "description": "Core business logic for BasedPricer - COGS calculations, margin analysis, and pricing utilities",
+  "author": "hazlijohar95",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^4.3.5",
+    "lz-string": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/lz-string": "^1.3.34",
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.17"
+  },
+  "keywords": [
+    "pricing",
+    "saas",
+    "cogs",
+    "margin",
+    "calculator",
+    "cost-analysis"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hazlijohar95/BasedPricer.git",
+    "directory": "packages/core"
+  }
+}

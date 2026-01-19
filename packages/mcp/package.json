@@ -1,0 +1,49 @@
+{
+  "name": "@basedpricer/mcp",
+  "version": "1.0.0",
+  "description": "MCP server for BasedPricer - use AI assistants like Claude to analyze pricing",
+  "author": "hazlijohar95",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "basedpricer-mcp": "./bin/basedpricer-mcp.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@basedpricer/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsup": "^8.5.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.17"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "pricing",
+    "saas"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hazlijohar95/BasedPricer.git",
+    "directory": "packages/mcp"
+  }
+}
