@@ -13,14 +13,15 @@ import {
   Trash,
   GitBranch,
   User,
+  CurrencyDollar,
 } from '@phosphor-icons/react';
 import { featureCategories, type FeatureCategory, type Feature } from '../data/features';
-import { usePricing } from '../context/PricingContext';
+import { usePricing, type VariableCostItem } from '../context/PricingContext';
 
 type SourceFilter = 'all' | 'codebase' | 'manual';
 
 export function FeatureInventory() {
-  const { features, addFeature, updateFeature, removeFeature } = usePricing();
+  const { features, addFeature, updateFeature, removeFeature, variableCosts } = usePricing();
 
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -302,6 +303,7 @@ export function FeatureInventory() {
                   <FeatureCard
                     key={feature.id}
                     feature={feature}
+                    variableCosts={variableCosts}
                     onEdit={() => setEditingFeature(feature)}
                     onDelete={() => handleDeleteFeature(feature.id)}
                   />
@@ -386,6 +388,7 @@ export function FeatureInventory() {
       {/* Add Feature Modal */}
       {showAddModal && (
         <FeatureModal
+          variableCosts={variableCosts}
           onClose={() => setShowAddModal(false)}
           onSave={handleAddFeature}
         />
@@ -395,6 +398,7 @@ export function FeatureInventory() {
       {editingFeature && (
         <FeatureModal
           feature={editingFeature}
+          variableCosts={variableCosts}
           onClose={() => setEditingFeature(null)}
           onSave={(updates) => handleEditFeature(updates)}
         />
@@ -426,13 +430,20 @@ function SourceBadge({ source }: { source: 'codebase' | 'manual' }) {
 
 function FeatureCard({
   feature,
+  variableCosts,
   onEdit,
   onDelete,
 }: {
   feature: Feature;
+  variableCosts: VariableCostItem[];
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  // Find linked cost item if costDriver matches a variable cost ID
+  const linkedCost = feature.costDriver
+    ? variableCosts.find(c => c.id === feature.costDriver)
+    : null;
+
   return (
     <div className="card p-5 group relative">
       {/* Source Badge */}
@@ -462,17 +473,22 @@ function FeatureCard({
       </div>
 
       {(feature.hasLimit || feature.costDriver) && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex flex-wrap gap-2 mt-3">
           {feature.hasLimit && (
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-[0.2rem]">
               {feature.limitUnit}
             </span>
           )}
-          {feature.costDriver && (
+          {linkedCost ? (
+            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-[0.2rem] flex items-center gap-1">
+              <CurrencyDollar size={12} weight="bold" />
+              MYR {linkedCost.costPerUnit.toFixed(3)}/{linkedCost.unit}
+            </span>
+          ) : feature.costDriver ? (
             <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-[0.2rem]">
               ${feature.costDriver}
             </span>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -499,10 +515,12 @@ function FeatureCard({
 
 function FeatureModal({
   feature,
+  variableCosts,
   onClose,
   onSave,
 }: {
   feature?: Feature;
+  variableCosts: VariableCostItem[];
   onClose: () => void;
   onSave: (data: Omit<Feature, 'id' | 'source' | 'createdAt'>) => void;
 }) {
@@ -516,6 +534,11 @@ function FeatureModal({
     costDriver: feature?.costDriver ?? '',
     valueProposition: feature?.valueProposition ?? '',
   });
+
+  // Find linked cost for display
+  const linkedCost = formData.costDriver
+    ? variableCosts.find(c => c.id === formData.costDriver)
+    : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -644,14 +667,34 @@ function FeatureModal({
           {/* Cost Driver */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cost Driver (optional)</label>
-            <input
-              type="text"
+            <select
               value={formData.costDriver}
               onChange={(e) => setFormData(prev => ({ ...prev, costDriver: e.target.value }))}
               className="input-field w-full"
-              placeholder="e.g., storage, API calls, email"
-            />
-            <p className="text-xs text-gray-400 mt-1">What drives the variable cost of this feature?</p>
+            >
+              <option value="">No cost driver</option>
+              <optgroup label="Variable Costs (from COGS)">
+                {variableCosts.map(cost => (
+                  <option key={cost.id} value={cost.id}>
+                    {cost.name} - MYR {cost.costPerUnit.toFixed(3)}/{cost.unit}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            {linkedCost && (
+              <div className="mt-2 p-2 bg-emerald-50 rounded-[0.2rem] border border-emerald-200">
+                <p className="text-xs text-emerald-700 font-medium flex items-center gap-1">
+                  <CurrencyDollar size={12} weight="bold" />
+                  Linked to: {linkedCost.name}
+                </p>
+                <p className="text-xs text-emerald-600 mt-0.5">
+                  MYR {linkedCost.costPerUnit.toFixed(3)} per {linkedCost.unit} × {linkedCost.usagePerCustomer} {linkedCost.unit}/customer
+                </p>
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1">
+              Link this feature to a variable cost from the COGS calculator
+            </p>
           </div>
 
           {/* Actions */}

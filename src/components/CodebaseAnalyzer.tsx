@@ -14,6 +14,11 @@ import {
   Stack,
   Lock,
   Sparkle,
+  ShieldCheck,
+  Rocket,
+  Target,
+  TrendUp,
+  Lightning,
 } from '@phosphor-icons/react';
 import {
   type AIProvider,
@@ -32,6 +37,7 @@ import {
   checkRepoAccess,
   fetchForAnalysis,
   getRateLimit,
+  type FetchProgressCallback,
 } from '../services/github';
 import {
   analyzeCodebase,
@@ -40,8 +46,31 @@ import {
 } from '../services/ai-analyzer';
 import { MODEL_DISPLAY_NAMES } from '../services/ai-client';
 import { usePricing } from '../context/PricingContext';
-import { ProviderLogo, GitHubLogo } from './ProviderLogos';
+import { ProviderLogo, GitHubLogo, PROVIDER_COLORS } from './ProviderLogos';
 import type { FeatureCategory } from '../data/features';
+
+// Trust & transparency components
+import {
+  DataFlowDisclosure,
+  RepoAccessInfo,
+  AnalysisProgressCard,
+  AnalysisScopeInfo,
+  type FetchProgress,
+} from './shared';
+
+// Cost display components
+import { CostSummary, CostEstimateCard } from './shared';
+import {
+  calculateTokenCost,
+  estimateAnalysisCost,
+  compareProviderCosts,
+  type CostBreakdown,
+  type CostEstimate,
+  type ProviderComparison,
+} from '../utils/aiCostCalculator';
+
+// Business type data
+import { BUSINESS_TYPES, type BusinessType } from '../data/business-types';
 
 type AnalysisStep = 'idle' | 'checking' | 'fetching' | 'analyzing' | 'done' | 'error';
 
@@ -79,13 +108,6 @@ function mapToFeatureCategory(category: string): FeatureCategory {
   return categoryMap[normalized] || 'integrations'; // Default to integrations for unknown
 }
 
-// Provider brand colors
-const PROVIDER_COLORS: Record<AIProvider, { bg: string; border: string; text: string; accent: string }> = {
-  openai: { bg: 'bg-[#10a37f]/5', border: 'border-[#10a37f]/20', text: 'text-[#10a37f]', accent: '#10a37f' },
-  anthropic: { bg: 'bg-[#d4a27f]/5', border: 'border-[#d4a27f]/20', text: 'text-[#cc785c]', accent: '#cc785c' },
-  openrouter: { bg: 'bg-[#6366f1]/5', border: 'border-[#6366f1]/20', text: 'text-[#6366f1]', accent: '#6366f1' },
-};
-
 export function CodebaseAnalyzer() {
   // GitHub input
   const [repoUrl, setRepoUrl] = useState('');
@@ -106,8 +128,16 @@ export function CodebaseAnalyzer() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [quickResult, setQuickResult] = useState<ReturnType<typeof quickAnalyzeFromPackageJson> | null>(null);
 
+  // Progress tracking
+  const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
+
+  // Cost tracking
+  const [costEstimate, setCostEstimate] = useState<CostEstimate | null>(null);
+  const [costBreakdown, setCostBreakdown] = useState<CostBreakdown | null>(null);
+  const [providerComparisons, setProviderComparisons] = useState<ProviderComparison[]>([]);
+
   // Context
-  const { setVariableCosts, setFixedCosts, importCodebaseFeatures } = usePricing();
+  const { setVariableCosts, setFixedCosts, importCodebaseFeatures, setBusinessType, applyBusinessTypeTemplate } = usePricing();
 
   // Request tracking to prevent race conditions
   const currentRequestRef = useRef<number>(0);
@@ -118,7 +148,7 @@ export function CodebaseAnalyzer() {
   const hasAIKey = hasAnyAIKey();
 
   // Find which provider has a key
-  const activeProvider = (['openai', 'anthropic', 'openrouter'] as AIProvider[]).find(
+  const activeProvider = (['openai', 'anthropic', 'openrouter', 'minimax', 'glm'] as AIProvider[]).find(
     p => storedKeys.keys[p]
   );
 
@@ -155,6 +185,9 @@ export function CodebaseAnalyzer() {
     setAnalysisError(null);
     setAnalysisResult(null);
     setQuickResult(null);
+    setFetchProgress(null);
+    setCostEstimate(null);
+    setCostBreakdown(null);
 
     const parsed = parseGitHubUrl(repoUrl);
     if (!parsed) {
@@ -185,7 +218,17 @@ export function CodebaseAnalyzer() {
       }
 
       setAnalysisStep('fetching');
-      const payload = await fetchForAnalysis(repoUrl);
+
+      // Progress callback for file fetching
+      const onProgress: FetchProgressCallback = (progress) => {
+        setFetchProgress({
+          current: progress.current,
+          total: progress.total,
+          currentFile: progress.currentFile,
+        });
+      };
+
+      const payload = await fetchForAnalysis(repoUrl, onProgress);
       if (currentRequestRef.current !== requestId) return;
 
       if (payload.packageJson) {
@@ -193,9 +236,39 @@ export function CodebaseAnalyzer() {
         setQuickResult(quick);
       }
 
+      // Calculate total characters for cost estimation
+      const totalChars = payload.srcFiles.reduce((sum, f) => sum + f.content.length, 0) +
+        (payload.readme?.length ?? 0) +
+        (payload.packageJson ? JSON.stringify(payload.packageJson).length : 0);
+
+      // Generate cost estimate before AI analysis
+      const estimate = estimateAnalysisCost(
+        payload.srcFiles.length,
+        totalChars,
+        activeProvider ?? 'anthropic'
+      );
+      setCostEstimate(estimate);
+
+      // Generate provider comparisons
+      const comparisons = compareProviderCosts(
+        estimate.estimatedTokens * 0.8, // Rough input tokens
+        estimate.estimatedTokens * 0.2, // Rough output tokens
+        activeProvider ?? 'anthropic'
+      );
+      setProviderComparisons(comparisons);
+
       setAnalysisStep('analyzing');
       const result = await analyzeCodebase(payload);
       if (currentRequestRef.current !== requestId) return;
+
+      // Calculate actual cost from token usage
+      if (result.tokenUsage) {
+        const breakdown = calculateTokenCost(
+          result.tokenUsage,
+          activeProvider ?? 'anthropic'
+        );
+        setCostBreakdown(breakdown);
+      }
 
       setAnalysisResult(result);
       setAnalysisStep('done');
@@ -204,7 +277,9 @@ export function CodebaseAnalyzer() {
       console.error('Analysis failed:', e);
 
       // Categorize and enhance error message
-      const errorMessage = e instanceof Error ? e.message : 'Analysis failed';
+      // Sanitize error message to prevent potential XSS (strip HTML tags)
+      const rawMessage = e instanceof Error ? e.message : 'Analysis failed';
+      const errorMessage = rawMessage.replace(/<[^>]*>/g, '').slice(0, 500); // Strip HTML, limit length
       let enhancedError = errorMessage;
 
       if (errorMessage.includes('401') || errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('invalid api key')) {
@@ -224,7 +299,7 @@ export function CodebaseAnalyzer() {
       setAnalysisError(enhancedError);
       setAnalysisStep('error');
     }
-  }, [repoUrl, hasAIKey]);
+  }, [repoUrl, hasAIKey, activeProvider]);
 
   // Apply analysis results to context
   const handleApplyResults = useCallback(() => {
@@ -266,7 +341,18 @@ export function CodebaseAnalyzer() {
     setVariableCosts(variableCosts);
     setFixedCosts(fixedCosts);
     importCodebaseFeatures(features);
-  }, [analysisResult, setVariableCosts, setFixedCosts, importCodebaseFeatures]);
+
+    // Set business type from analysis
+    if (analysisResult.businessType) {
+      setBusinessType(analysisResult.businessType.detected, analysisResult.businessType.confidence);
+    }
+  }, [analysisResult, setVariableCosts, setFixedCosts, importCodebaseFeatures, setBusinessType]);
+
+  // Apply business type template
+  const handleApplyTemplate = useCallback(() => {
+    if (!analysisResult?.businessType) return;
+    applyBusinessTypeTemplate(analysisResult.businessType.detected);
+  }, [analysisResult, applyBusinessTypeTemplate]);
 
   const rateLimit = getRateLimit();
   const isAnalyzing = analysisStep === 'checking' || analysisStep === 'fetching' || analysisStep === 'analyzing';
@@ -376,24 +462,32 @@ export function CodebaseAnalyzer() {
                 </>
               )}
             </div>
-            <button
-              onClick={() => setShowKeySettings(!showKeySettings)}
-              className="text-sm text-[#253ff6] hover:text-[#1e35d9] font-medium flex items-center gap-1"
-            >
-              {showKeySettings ? 'Hide' : 'Configure'}
-              <CaretDown size={14} className={`transition-transform ${showKeySettings ? 'rotate-180' : ''}`} />
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Cost estimate badge */}
+              {costEstimate && analysisStep === 'analyzing' && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  ~${costEstimate.estimatedCostUSD.toFixed(3)}
+                </span>
+              )}
+              <button
+                onClick={() => setShowKeySettings(!showKeySettings)}
+                className="text-sm text-[#253ff6] hover:text-[#1e35d9] font-medium flex items-center gap-1"
+              >
+                {showKeySettings ? 'Hide' : 'Configure'}
+                <CaretDown size={14} className={`transition-transform ${showKeySettings ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* API Keys Settings (Expandable) */}
         {showKeySettings && (
           <div className="border-t border-gray-200">
-            {/* Privacy Notice */}
+            {/* Enhanced Privacy Notice */}
             <div className="px-6 py-3 bg-blue-50/50 border-b border-blue-100/50 flex items-center gap-2">
-              <Lock size={14} className="text-blue-600" />
+              <ShieldCheck size={14} weight="duotone" className="text-blue-600" />
               <p className="text-xs text-blue-700">
-                Keys are stored locally in your browser and sent directly to providers. We never see them.
+                Keys are stored locally in your browser and sent directly to providers. We never see or log them.
               </p>
             </div>
 
@@ -408,8 +502,8 @@ export function CodebaseAnalyzer() {
               <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
                 AI Provider
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(['openai', 'anthropic', 'openrouter'] as AIProvider[]).map((provider) => {
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {(['openai', 'anthropic', 'openrouter', 'minimax', 'glm'] as AIProvider[]).map((provider) => {
                   const isSelected = selectedProvider === provider;
                   const hasKey = !!storedKeys.keys[provider];
                   const colors = PROVIDER_COLORS[provider];
@@ -418,28 +512,23 @@ export function CodebaseAnalyzer() {
                     <button
                       key={provider}
                       onClick={() => setSelectedProvider(provider)}
-                      className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                      className={`relative flex-shrink-0 flex items-center gap-2.5 px-3 py-2.5 rounded-lg border-2 transition-colors ${
                         isSelected
                           ? `${colors.bg} ${colors.border}`
-                          : 'border-gray-100 hover:border-gray-200 bg-white'
+                          : 'border-transparent bg-gray-50 hover:bg-gray-100'
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-2">
-                        <ProviderLogo
-                          provider={provider}
-                          size={24}
-                          className={isSelected ? colors.text : 'text-gray-400'}
-                        />
-                        {hasKey && (
-                          <Check size={14} className="text-green-500 absolute top-3 right-3" />
-                        )}
-                      </div>
-                      <p className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <ProviderLogo
+                        provider={provider}
+                        size={18}
+                        className={isSelected ? colors.text : 'text-gray-500'}
+                      />
+                      <span className={`text-sm font-medium whitespace-nowrap ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
                         {PROVIDER_INFO[provider].name}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {MODEL_DISPLAY_NAMES[provider]}
-                      </p>
+                      </span>
+                      {hasKey && (
+                        <Check size={12} weight="bold" className="text-green-500" />
+                      )}
                     </button>
                   );
                 })}
@@ -562,6 +651,33 @@ export function CodebaseAnalyzer() {
           </div>
         )}
       </div>
+
+      {/* Trust & Transparency Section */}
+      {analysisStep === 'idle' && (
+        <div className="grid grid-cols-2 gap-4 items-start">
+          <DataFlowDisclosure defaultExpanded />
+          <RepoAccessInfo hasToken={!!githubToken} />
+        </div>
+      )}
+
+      {/* Analysis Progress */}
+      {isAnalyzing && (
+        <AnalysisProgressCard
+          step={analysisStep}
+          fetchProgress={fetchProgress ?? undefined}
+          activeProvider={activeProvider ?? undefined}
+          modelName={activeProvider ? MODEL_DISPLAY_NAMES[activeProvider] : undefined}
+        />
+      )}
+
+      {/* Cost Estimate (shown during fetching/analyzing) */}
+      {costEstimate && (analysisStep === 'fetching' || analysisStep === 'analyzing') && (
+        <CostEstimateCard
+          estimate={costEstimate}
+          comparisons={providerComparisons}
+          fileCount={fetchProgress?.total}
+        />
+      )}
 
       {/* Quick Results (from package.json) */}
       {quickResult && analysisStep !== 'done' && (
@@ -697,6 +813,161 @@ export function CodebaseAnalyzer() {
               ))}
             </div>
           </div>
+
+          {/* Business Type Detection */}
+          {analysisResult.businessType && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Target size={18} weight="duotone" className="text-[#253ff6]" />
+                  <h3 className="text-sm font-medium text-gray-900">Business Type Detected</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[#253ff6]">
+                    {Math.round(analysisResult.businessType.confidence * 100)}%
+                  </span>
+                  <span className="text-xs text-gray-400">confidence</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-br from-[#253ff6]/5 to-white border border-[#253ff6]/20 rounded-lg mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#253ff6]/10 flex items-center justify-center">
+                    <Rocket size={20} weight="duotone" className="text-[#253ff6]" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">
+                      {BUSINESS_TYPES[analysisResult.businessType.detected]?.name ?? analysisResult.businessType.detected}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {BUSINESS_TYPES[analysisResult.businessType.detected]?.pricingModel ?? 'Feature-tiered pricing'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detection Signals */}
+              {analysisResult.businessType.signals && analysisResult.businessType.signals.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">Detection Signals</p>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.businessType.signals.map((signal, i) => (
+                      <span key={i} className="px-2.5 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Alternative Types */}
+              {analysisResult.businessType.secondaryTypes && analysisResult.businessType.secondaryTypes.length > 0 && (
+                <div className="pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-400 mb-2">Also considered:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.businessType.secondaryTypes.slice(0, 3).map((alt, i) => (
+                      <span key={i} className="px-2.5 py-1 text-xs bg-gray-50 text-gray-500 rounded-full">
+                        {BUSINESS_TYPES[alt.type]?.name ?? alt.type} ({Math.round(alt.confidence * 100)}%)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Apply Template Button */}
+              <button
+                onClick={handleApplyTemplate}
+                className="mt-4 w-full py-2.5 bg-[#253ff6]/10 text-[#253ff6] text-sm font-medium rounded-lg hover:bg-[#253ff6]/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <Lightning size={16} weight="fill" />
+                Apply {BUSINESS_TYPES[analysisResult.businessType.detected]?.name ?? 'Template'} Tier Structure
+              </button>
+            </div>
+          )}
+
+          {/* Narrative Insights */}
+          {analysisResult.narrative && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb size={18} weight="duotone" className="text-amber-500" />
+                <h3 className="text-sm font-medium text-gray-900">AI Insights</h3>
+              </div>
+
+              {/* Summary */}
+              <p className="text-sm text-gray-700 mb-4">{analysisResult.narrative.summary}</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Key Risks */}
+                {analysisResult.narrative.keyRisks && analysisResult.narrative.keyRisks.length > 0 && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Warning size={14} weight="fill" className="text-red-500" />
+                      <p className="text-xs font-medium text-red-800">Key Risks</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {analysisResult.narrative.keyRisks.map((risk, i) => (
+                        <li key={i} className="text-xs text-red-700 flex items-start gap-1.5">
+                          <span className="text-red-400 mt-1">•</span>
+                          {risk}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Key Opportunities */}
+                {analysisResult.narrative.keyOpportunities && analysisResult.narrative.keyOpportunities.length > 0 && (
+                  <div className="p-4 bg-green-50 border border-green-100 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendUp size={14} weight="fill" className="text-green-500" />
+                      <p className="text-xs font-medium text-green-800">Opportunities</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {analysisResult.narrative.keyOpportunities.map((opp, i) => (
+                        <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
+                          <span className="text-green-400 mt-1">•</span>
+                          {opp}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing Recommendation */}
+              {analysisResult.narrative.pricingRecommendation && (
+                <div className="mt-4 p-4 bg-[#253ff6]/5 border border-[#253ff6]/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkle size={14} weight="fill" className="text-[#253ff6]" />
+                    <p className="text-xs font-medium text-[#253ff6]">Pricing Recommendation</p>
+                  </div>
+                  <p className="text-sm text-gray-700">{analysisResult.narrative.pricingRecommendation}</p>
+                </div>
+              )}
+
+              {/* What Matters Most */}
+              {analysisResult.narrative.whatMatters && analysisResult.narrative.whatMatters.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">What Matters Most</p>
+                  <div className="flex flex-wrap gap-2">
+                    {analysisResult.narrative.whatMatters.map((item, i) => (
+                      <span key={i} className="px-3 py-1.5 text-xs bg-amber-50 text-amber-700 rounded-lg font-medium">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cost Summary */}
+          {costBreakdown && (
+            <CostSummary
+              breakdown={costBreakdown}
+              otherProvidersCost={providerComparisons.filter(p => !p.isSelected)}
+            />
+          )}
 
           {/* Features */}
           {analysisResult.features.length > 0 && (

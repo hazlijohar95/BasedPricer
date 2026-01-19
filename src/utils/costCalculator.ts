@@ -1,6 +1,45 @@
 // Unified cost calculation utilities
 // Single source of truth for all COGS, margin, and pricing calculations
 
+// ============================================================================
+// Rounding Utilities
+// ============================================================================
+
+/**
+ * Round to specified decimal places (default: 2 for currency)
+ * Uses banker's rounding (round half to even) for financial calculations
+ */
+export function roundCurrency(value: number, decimals: number = 2): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}
+
+/**
+ * Format currency for display with proper rounding
+ */
+export function formatCurrency(value: number, decimals: number = 2): string {
+  return roundCurrency(value, decimals).toFixed(decimals);
+}
+
+/**
+ * Round customer count up (always ceiling for capacity planning)
+ */
+export function roundCustomers(value: number): number {
+  return Math.ceil(value);
+}
+
+/**
+ * Round percentage for display (default: 1 decimal)
+ */
+export function roundPercentage(value: number, decimals: number = 1): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}
+
+// ============================================================================
+// Types
+// ============================================================================
+
 export interface VariableCostItem {
   id: string;
   name: string;

@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { TrendUp, Users, Target, Percent, Gauge, ChartLineUp, Trophy, Rocket } from '@phosphor-icons/react';
-import { calculateTierVariableCosts, DEFAULT_COST_RATES, type CostRates } from '../data/tiers';
+import { calculateTierVariableCosts } from '../data/tiers';
 import { usePricing } from '../context/PricingContext';
+import { deriveCostRatesFromVariableCosts } from '../utils/costRates';
 import {
   calculateInvestorMetrics,
   formatCurrency,
@@ -34,17 +35,9 @@ export function PricingCalculator() {
   } = usePricing();
 
   // Derive cost rates from context's variableCosts (single source of truth)
-  // This ensures PricingCalculator uses the same rates as COGSCalculator
-  const costRates = useMemo((): CostRates => {
-    const ocrCost = variableCosts.find(c => c.id === 'ocr')?.costPerUnit;
-    const emailCost = variableCosts.find(c => c.id === 'email')?.costPerUnit;
-    const storageCost = variableCosts.find(c => c.id === 'storage')?.costPerUnit;
-
-    return {
-      extractionCostPerUnit: ocrCost ?? DEFAULT_COST_RATES.extractionCostPerUnit,
-      emailCostPerUnit: emailCost ?? DEFAULT_COST_RATES.emailCostPerUnit,
-      storageCostPerGB: storageCost ?? DEFAULT_COST_RATES.storageCostPerGB,
-    };
+  // Uses centralized utility to ensure consistency across all components
+  const costRates = useMemo(() => {
+    return deriveCostRatesFromVariableCosts(variableCosts);
   }, [variableCosts]);
 
   // Get initial prices from context tiers
@@ -172,6 +165,9 @@ export function PricingCalculator() {
       ? Math.ceil(costsToRecoverMonthly / contributionMargin)
       : 0;
 
+    // Per-user freemium cost for analysis
+    const freemiumCostPerUser = counts.freemium > 0 ? freemiumCosts / counts.freemium : 0;
+
     return {
       grossProfit,
       grossMargin,
@@ -182,7 +178,8 @@ export function PricingCalculator() {
       ltv,
       contributionMargin,
       breakEvenCustomers,
-      freemiumCosts, // New: expose freemium subsidy for transparency
+      freemiumCosts, // Total freemium subsidy for transparency
+      freemiumCostPerUser, // Cost per freemium user for analysis
     };
   }, [totalMRR, totalVariableCosts, totalCosts, counts, revenue, tierVariableCosts, scenario.monthlyChurnRate, monthlyFixedCostsTotal]);
 
@@ -190,7 +187,7 @@ export function PricingCalculator() {
   const {
     grossProfit, grossMargin, operatingProfit, operatingMargin,
     paidCustomers, arpu, ltv, contributionMargin, breakEvenCustomers,
-    freemiumCosts
+    freemiumCosts, freemiumCostPerUser
   } = metrics;
 
   // Calculate investor metrics for valuation, milestones, and break-even timeline
@@ -613,6 +610,11 @@ export function PricingCalculator() {
             {freemiumCosts > 0 && (
               <p className="text-xs text-amber-600 mt-1">
                 Includes MYR {freemiumCosts.toFixed(2)} freemium subsidy
+                {freemiumCostPerUser > 0 && (
+                  <span className="block">
+                    (MYR {freemiumCostPerUser.toFixed(2)}/free user)
+                  </span>
+                )}
               </p>
             )}
           </div>

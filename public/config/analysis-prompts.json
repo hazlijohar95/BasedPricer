@@ -1,0 +1,224 @@
+{
+  "$schema": "./schemas/analysis-prompts.schema.json",
+  "_meta": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-01-19",
+    "description": "Customizable prompts for AI codebase analysis. Advanced users can modify these to change how analysis works."
+  },
+  "_documentation": {
+    "overview": "This file contains the prompts sent to AI models when analyzing codebases. The system prompt establishes the AI's role and capabilities, while the user prompt template is filled with actual codebase data.",
+    "variables": {
+      "{repoName}": "Full repository name (owner/repo)",
+      "{repoDescription}": "Repository description from GitHub",
+      "{language}": "Primary programming language",
+      "{dependencies}": "JSON of package.json dependencies",
+      "{readme}": "Truncated README content",
+      "{sourceFiles}": "Sample source files with paths and content"
+    },
+    "promptEngineering": {
+      "whyStructuredOutput": "We request JSON output to ensure consistent parsing. The AI is instructed to respond with valid JSON only, no markdown.",
+      "whyBusinessTypeFirst": "Classifying the business type first allows the AI to tailor all subsequent analysis (tiers, pricing model, risks) to that context.",
+      "whyConfidenceScores": "Confidence scores help users understand the reliability of each part of the analysis. Low confidence areas may need manual review.",
+      "whyNarrative": "The narrative section provides actionable insights beyond just data extraction - risks, opportunities, and recommendations specific to the detected business type."
+    },
+    "customizationGuide": {
+      "addingBusinessTypes": "Add new business types to the 'businessTypes' object with detection signals and recommended pricing model.",
+      "adjustingSignals": "Modify 'signals' arrays to include dependencies, route patterns, or keywords that indicate a business type.",
+      "changingOutput": "Modify 'outputSchema' to add/remove fields from the AI response. Update the parser in ai-analyzer.ts accordingly.",
+      "temperatureNote": "Lower temperature (0.1-0.3) produces more consistent, deterministic output. Higher values (0.7-0.9) produce more creative but variable results."
+    }
+  },
+  "systemPrompt": {
+    "role": "You are an expert SaaS pricing analyst and software architect. Your task is to thoroughly analyze codebases to extract pricing-relevant information.",
+    "objectives": [
+      "Business Type Classification: First, classify what type of SaaS this is (API service, marketplace, fintech, AI/ML SaaS, developer tools, B2B SaaS, consumer SaaS, or generic)",
+      "Tech Stack Analysis: Identify framework, language, database, auth, hosting, and key libraries",
+      "Feature Detection: Find ALL user-facing features that could be monetized, with confidence scores",
+      "Cost Driver Identification: Map features to cost drivers (AI/LLM calls, storage, emails, API calls, compute)",
+      "Tier Recommendations: Suggest logical pricing tiers based on business type and feature complexity",
+      "Narrative Insights: Provide actionable insights, risks, opportunities, and recommendations"
+    ],
+    "guidelines": [
+      "Look for route handlers, API endpoints, and service files to identify features",
+      "Check for AI/LLM integrations (OpenAI, Anthropic, Mistral, etc.)",
+      "Identify storage services (S3, R2, Supabase Storage, etc.)",
+      "Look for email services (Resend, SendGrid, Postmark, etc.)",
+      "Find payment integrations (Stripe, PayPal, etc.)",
+      "Detect auth patterns (Clerk, Auth.js, Supabase Auth, etc.)",
+      "Match pricing model to business type (usage-based for API/AI, take-rate for marketplace, etc.)"
+    ],
+    "outputInstruction": "You must respond with valid JSON only. No markdown, no explanation outside the JSON."
+  },
+  "businessTypes": {
+    "api_service": {
+      "name": "API Service",
+      "description": "API-as-a-service, developer APIs, data services",
+      "signals": ["versioned API routes (/v1/, /api/)", "rate limiting middleware", "API documentation", "OpenAPI/Swagger"],
+      "recommendedPricingModel": "usage_based",
+      "typicalTiers": 3,
+      "keyMetrics": ["API calls", "rate limits", "endpoints"]
+    },
+    "marketplace": {
+      "name": "Marketplace",
+      "description": "Two-sided marketplace, e-commerce platform",
+      "signals": ["seller/buyer roles", "listings", "commissions", "escrow", "reviews"],
+      "recommendedPricingModel": "take_rate",
+      "typicalTiers": 3,
+      "keyMetrics": ["GMV", "transactions", "sellers", "take rate"]
+    },
+    "fintech": {
+      "name": "Fintech",
+      "description": "Financial services, banking, payments",
+      "signals": ["KYC/AML", "bank connections (Plaid)", "compliance", "transactions", "ledger"],
+      "recommendedPricingModel": "hybrid",
+      "typicalTiers": 3,
+      "keyMetrics": ["accounts", "transactions", "AUM", "compliance"]
+    },
+    "ai_ml_saas": {
+      "name": "AI/ML SaaS",
+      "description": "AI-powered applications, ML platforms",
+      "signals": ["LLM APIs (OpenAI, Anthropic)", "tokens/credits", "embeddings", "vector stores", "model inference"],
+      "recommendedPricingModel": "usage_based",
+      "typicalTiers": 4,
+      "keyMetrics": ["tokens", "inference calls", "models", "compute hours"]
+    },
+    "developer_tools": {
+      "name": "Developer Tools",
+      "description": "Dev tools, CI/CD, code analysis",
+      "signals": ["GitHub integration", "builds", "deployments", "webhooks", "CLI tools"],
+      "recommendedPricingModel": "seat_based",
+      "typicalTiers": 4,
+      "keyMetrics": ["seats", "projects", "builds", "minutes"]
+    },
+    "b2b_saas": {
+      "name": "B2B SaaS",
+      "description": "Business software, enterprise tools",
+      "signals": ["organizations", "workspaces", "team management", "SSO/SAML", "audit logs"],
+      "recommendedPricingModel": "feature_tiered",
+      "typicalTiers": 4,
+      "keyMetrics": ["users", "workspaces", "features", "storage"]
+    },
+    "consumer_saas": {
+      "name": "Consumer SaaS",
+      "description": "B2C applications, consumer tools",
+      "signals": ["social features", "gamification", "user profiles", "freemium indicators"],
+      "recommendedPricingModel": "freemium",
+      "typicalTiers": 3,
+      "keyMetrics": ["users", "engagement", "conversion rate"]
+    },
+    "generic": {
+      "name": "Generic SaaS",
+      "description": "Standard SaaS when no clear type detected",
+      "signals": [],
+      "recommendedPricingModel": "feature_tiered",
+      "typicalTiers": 3,
+      "keyMetrics": ["users", "features", "usage"]
+    }
+  },
+  "pricingModels": {
+    "usage_based": {
+      "name": "Usage-Based",
+      "description": "Pay for what you use (API calls, tokens, storage)",
+      "bestFor": ["API services", "AI/ML platforms", "infrastructure"],
+      "considerations": ["Predictable unit economics", "Can be unpredictable for customers", "Good for variable workloads"]
+    },
+    "seat_based": {
+      "name": "Seat-Based",
+      "description": "Pay per user/seat",
+      "bestFor": ["Collaboration tools", "Developer tools", "Enterprise software"],
+      "considerations": ["Predictable revenue", "May limit adoption", "Easy to understand"]
+    },
+    "feature_tiered": {
+      "name": "Feature-Tiered",
+      "description": "Different features at different price points",
+      "bestFor": ["B2B SaaS", "General purpose tools"],
+      "considerations": ["Clear upgrade path", "May feel restrictive", "Good for upselling"]
+    },
+    "take_rate": {
+      "name": "Take Rate",
+      "description": "Percentage of transaction value",
+      "bestFor": ["Marketplaces", "Payment processors", "Platforms"],
+      "considerations": ["Scales with customer success", "Aligns incentives", "Requires transaction volume"]
+    },
+    "hybrid": {
+      "name": "Hybrid",
+      "description": "Combination of models (base + usage, seat + features)",
+      "bestFor": ["Complex products", "Enterprise", "Fintech"],
+      "considerations": ["Flexible", "Can be confusing", "Captures multiple value dimensions"]
+    },
+    "freemium": {
+      "name": "Freemium",
+      "description": "Free tier with paid upgrades",
+      "bestFor": ["Consumer apps", "PLG products", "Developer tools"],
+      "considerations": ["Wide adoption", "Conversion challenge", "Viral potential"]
+    }
+  },
+  "userPromptTemplate": "Analyze this codebase and extract pricing-relevant information.\n\nRepository: {repoName}\nDescription: {repoDescription}\nPrimary Language: {language}\n\nPackage.json dependencies:\n{dependencies}\n\nREADME (excerpt):\n{readme}\n\nSource file samples:\n{sourceFiles}\n\n---\n\nReturn a JSON object with this exact structure:\n{outputSchema}\n\nBe thorough but focus on features that affect pricing. Confidence scores should reflect certainty (0-100).\nMatch tierModelType to businessType: usage_based for API/AI, take_rate for marketplace, hybrid for fintech, etc.",
+  "outputSchema": {
+    "businessType": {
+      "detected": "api_service | marketplace | fintech | ai_ml_saas | developer_tools | b2b_saas | consumer_saas | generic",
+      "confidence": 85,
+      "secondaryTypes": [
+        { "type": "b2b_saas", "confidence": 40 }
+      ],
+      "signals": ["Found OpenAI integration", "Has versioned API routes", "Token usage tracking detected"]
+    },
+    "tierModelType": "usage_based | seat_based | feature_tiered | take_rate | hybrid | freemium",
+    "techStack": {
+      "framework": "string (e.g., Next.js, Remix, Express)",
+      "language": "string (e.g., TypeScript, JavaScript)",
+      "database": "string or null",
+      "hosting": "string or null (e.g., Vercel, AWS)",
+      "auth": "string or null (e.g., Clerk, NextAuth)"
+    },
+    "features": [
+      {
+        "id": "unique-id",
+        "name": "Feature Name",
+        "description": "What this feature does",
+        "category": "Category (Auth, AI, Storage, Analytics, etc.)",
+        "costDriver": "What drives the cost (API calls, storage, etc.) or null",
+        "confidence": 85
+      }
+    ],
+    "suggestedTiers": [
+      {
+        "name": "Free",
+        "price": 0,
+        "description": "For individuals getting started",
+        "features": ["feature-id-1", "feature-id-2"],
+        "limits": { "apiCalls": 100, "storage": 1 }
+      },
+      {
+        "name": "Pro",
+        "price": 29,
+        "description": "For growing teams",
+        "features": ["feature-id-1", "feature-id-2", "feature-id-3"],
+        "limits": { "apiCalls": 10000, "storage": 50 }
+      }
+    ],
+    "narrative": {
+      "summary": "2-3 sentence summary tailored to the detected business type",
+      "keyRisks": ["Risk 1", "Risk 2"],
+      "keyOpportunities": ["Opportunity 1", "Opportunity 2"],
+      "pricingRecommendation": "Specific pricing strategy recommendation based on business type",
+      "whatMatters": ["Key metric 1 for this business type", "Key metric 2"]
+    },
+    "summary": "Brief 2-3 sentence summary of what this product does",
+    "confidence": {
+      "overall": 75,
+      "features": 80,
+      "costs": 70,
+      "tiers": 65
+    }
+  },
+  "analysisSettings": {
+    "temperature": 0.2,
+    "maxTokens": 4096,
+    "maxReadmeChars": 5000,
+    "maxSourceFiles": 20,
+    "maxCharsPerFile": 4000,
+    "maxConfigFiles": 5,
+    "maxCharsPerConfigFile": 2000
+  }
+}

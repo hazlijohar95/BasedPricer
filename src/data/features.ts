@@ -1,4 +1,7 @@
+import { type BusinessType } from './business-types';
+
 export type FeatureSource = 'codebase' | 'manual';
+export type FeaturePriority = 'critical' | 'important' | 'nice_to_have';
 
 export interface Feature {
   id: string;
@@ -482,3 +485,201 @@ export const features: Feature[] = [
     source: 'codebase', valueProposition: 'Get started right'
   }
 ];
+
+/**
+ * Business-type-aware feature configuration
+ * Defines which feature categories are relevant to each business type
+ * and their priority level
+ */
+export interface BusinessTypeFeatureConfig {
+  relevantCategories: FeatureCategory[];
+  criticalCategories: FeatureCategory[];
+  suggestedFeatures: string[]; // Feature IDs that are particularly relevant
+}
+
+/**
+ * Feature configuration for each business type
+ */
+export const BUSINESS_TYPE_FEATURES: Record<BusinessType, BusinessTypeFeatureConfig> = {
+  api_service: {
+    relevantCategories: ['integrations', 'reporting', 'team', 'support'],
+    criticalCategories: ['integrations'],
+    suggestedFeatures: ['api_access', 'webhooks', 'usage_analytics', 'team_members', 'role_permissions'],
+  },
+  marketplace: {
+    relevantCategories: ['payments', 'invoicing', 'team', 'reporting', 'support'],
+    criticalCategories: ['payments', 'invoicing'],
+    suggestedFeatures: ['payment_collection', 'invoice_create', 'customer_management', 'usage_analytics', 'team_members'],
+  },
+  fintech: {
+    relevantCategories: ['payments', 'accounting_ai', 'reporting', 'team', 'integrations', 'support'],
+    criticalCategories: ['payments', 'accounting_ai', 'reporting'],
+    suggestedFeatures: ['payment_collection', 'coa_mapping', 'journal_entries', 'audit_trail', 'advanced_reporting', 'api_access'],
+  },
+  ai_ml_saas: {
+    relevantCategories: ['ai_extraction', 'accounting_ai', 'integrations', 'reporting', 'team', 'support'],
+    criticalCategories: ['ai_extraction', 'integrations'],
+    suggestedFeatures: ['ocr_extraction', 'line_item_extraction', 'api_access', 'usage_analytics', 'team_members'],
+  },
+  developer_tools: {
+    relevantCategories: ['integrations', 'team', 'reporting', 'support'],
+    criticalCategories: ['integrations', 'team'],
+    suggestedFeatures: ['api_access', 'webhooks', 'team_members', 'role_permissions', 'usage_analytics'],
+  },
+  b2b_saas: {
+    relevantCategories: ['team', 'integrations', 'reporting', 'support', 'document_management'],
+    criticalCategories: ['team', 'integrations'],
+    suggestedFeatures: ['team_members', 'role_permissions', 'api_access', 'webhooks', 'advanced_reporting', 'dataroom_storage'],
+  },
+  consumer_saas: {
+    relevantCategories: ['payments', 'email', 'reporting', 'support'],
+    criticalCategories: ['payments'],
+    suggestedFeatures: ['payment_collection', 'invoice_emails', 'email_support', 'usage_analytics'],
+  },
+  generic: {
+    relevantCategories: ['invoicing', 'document_management', 'team', 'reporting', 'integrations', 'support'],
+    criticalCategories: ['invoicing', 'team'],
+    suggestedFeatures: ['invoice_create', 'customer_management', 'team_members', 'role_permissions', 'email_support'],
+  },
+};
+
+/**
+ * Get feature categories relevant to a business type, ordered by importance
+ */
+export function getFeatureCategoriesForBusinessType(businessType: BusinessType): FeatureCategory[] {
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+
+  // Return critical categories first, then other relevant categories
+  const orderedCategories: FeatureCategory[] = [];
+
+  // Add critical categories first
+  config.criticalCategories.forEach(cat => {
+    if (!orderedCategories.includes(cat)) {
+      orderedCategories.push(cat);
+    }
+  });
+
+  // Add remaining relevant categories
+  config.relevantCategories.forEach(cat => {
+    if (!orderedCategories.includes(cat)) {
+      orderedCategories.push(cat);
+    }
+  });
+
+  // Add any remaining categories at the end
+  const allCategories = Object.keys(featureCategories) as FeatureCategory[];
+  allCategories.forEach(cat => {
+    if (!orderedCategories.includes(cat)) {
+      orderedCategories.push(cat);
+    }
+  });
+
+  return orderedCategories;
+}
+
+/**
+ * Get the priority of a feature for a specific business type
+ */
+export function getFeaturePriority(featureId: string, businessType: BusinessType): FeaturePriority {
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+  const feature = features.find(f => f.id === featureId);
+
+  if (!feature) return 'nice_to_have';
+
+  // Check if it's a suggested feature (critical)
+  if (config.suggestedFeatures.includes(featureId)) {
+    return 'critical';
+  }
+
+  // Check if the category is critical
+  if (config.criticalCategories.includes(feature.category)) {
+    return 'important';
+  }
+
+  // Check if the category is relevant
+  if (config.relevantCategories.includes(feature.category)) {
+    return 'nice_to_have';
+  }
+
+  return 'nice_to_have';
+}
+
+/**
+ * Get features filtered and sorted by relevance to a business type
+ */
+export function getFeaturesForBusinessType(businessType: BusinessType): Feature[] {
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+
+  // Sort features by priority
+  return [...features].sort((a, b) => {
+    const priorityOrder: Record<FeaturePriority, number> = {
+      critical: 0,
+      important: 1,
+      nice_to_have: 2,
+    };
+
+    const aPriority = getFeaturePriority(a.id, businessType);
+    const bPriority = getFeaturePriority(b.id, businessType);
+
+    // First sort by priority
+    if (priorityOrder[aPriority] !== priorityOrder[bPriority]) {
+      return priorityOrder[aPriority] - priorityOrder[bPriority];
+    }
+
+    // Then by whether category is relevant
+    const aRelevant = config.relevantCategories.includes(a.category) ? 0 : 1;
+    const bRelevant = config.relevantCategories.includes(b.category) ? 0 : 1;
+
+    return aRelevant - bRelevant;
+  });
+}
+
+/**
+ * Get suggested features for a business type (features that are particularly important)
+ */
+export function getSuggestedFeaturesForBusinessType(businessType: BusinessType): Feature[] {
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+
+  return config.suggestedFeatures
+    .map(id => features.find(f => f.id === id))
+    .filter((f): f is Feature => f !== undefined);
+}
+
+/**
+ * Check if a feature category is critical for a business type
+ */
+export function isCriticalCategory(category: FeatureCategory, businessType: BusinessType): boolean {
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+  return config.criticalCategories.includes(category);
+}
+
+/**
+ * Get feature category info with business-type-specific relevance
+ */
+export function getFeatureCategoryInfo(
+  category: FeatureCategory,
+  businessType?: BusinessType
+): {
+  name: string;
+  description: string;
+  isCritical: boolean;
+  isRelevant: boolean;
+} {
+  const info = featureCategories[category];
+
+  if (!businessType) {
+    return {
+      ...info,
+      isCritical: false,
+      isRelevant: true,
+    };
+  }
+
+  const config = BUSINESS_TYPE_FEATURES[businessType] ?? BUSINESS_TYPE_FEATURES.generic;
+
+  return {
+    ...info,
+    isCritical: config.criticalCategories.includes(category),
+    isRelevant: config.relevantCategories.includes(category),
+  };
+}

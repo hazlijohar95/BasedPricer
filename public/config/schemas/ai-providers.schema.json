@@ -1,0 +1,233 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ai-providers.schema.json",
+  "title": "AI Providers Configuration",
+  "description": "Schema for configuring AI providers and their pricing in pricing-tools-oss",
+  "type": "object",
+  "required": ["_meta", "providers"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "_meta": {
+      "type": "object",
+      "description": "Metadata about this configuration file",
+      "required": ["version", "lastUpdated"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of this config format"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO date when this file was last updated"
+        },
+        "maintainers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of maintainers/contributors"
+        },
+        "updateInstructions": {
+          "type": "string",
+          "description": "Instructions for updating this file"
+        }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "description": "Built-in AI providers",
+      "additionalProperties": {
+        "$ref": "#/definitions/provider"
+      }
+    },
+    "customProviders": {
+      "type": "array",
+      "description": "User-added custom providers (OpenAI-compatible)",
+      "items": {
+        "$ref": "#/definitions/customProvider"
+      }
+    }
+  },
+  "definitions": {
+    "provider": {
+      "type": "object",
+      "required": ["id", "name", "baseUrl", "defaultModel", "models"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this provider"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Provider's main website"
+        },
+        "pricingPage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Direct link to official pricing page"
+        },
+        "apiDocsUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to API documentation"
+        },
+        "keyDocsUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to get/manage API keys"
+        },
+        "keyPlaceholder": {
+          "type": "string",
+          "description": "Placeholder text for API key input"
+        },
+        "keyPattern": {
+          "type": "string",
+          "description": "Regex pattern for validating API key format"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Base URL for API calls"
+        },
+        "isOpenAICompatible": {
+          "type": "boolean",
+          "description": "Whether this provider uses OpenAI-compatible API format"
+        },
+        "supportsStreaming": {
+          "type": "boolean",
+          "description": "Whether streaming responses are supported"
+        },
+        "defaultModel": {
+          "type": "string",
+          "description": "Default model ID to use"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about this provider"
+        },
+        "models": {
+          "type": "object",
+          "description": "Available models from this provider",
+          "additionalProperties": {
+            "$ref": "#/definitions/model"
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["id", "name", "inputPricePerMillion", "outputPricePerMillion"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Model ID used in API calls"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable model name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of model capabilities"
+        },
+        "inputPricePerMillion": {
+          "type": "number",
+          "minimum": 0,
+          "description": "USD cost per 1 million input tokens"
+        },
+        "outputPricePerMillion": {
+          "type": "number",
+          "minimum": 0,
+          "description": "USD cost per 1 million output tokens"
+        },
+        "contextWindow": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum context length in tokens"
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum output tokens per request"
+        },
+        "supportsVision": {
+          "type": "boolean",
+          "description": "Whether model can process images"
+        },
+        "supportsTools": {
+          "type": "boolean",
+          "description": "Whether model supports function calling/tools"
+        },
+        "lastPriceUpdate": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO date when pricing was last verified"
+        },
+        "priceSource": {
+          "type": "string",
+          "format": "uri",
+          "description": "Direct link to source of pricing information"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about this model"
+        },
+        "deprecated": {
+          "type": "boolean",
+          "description": "Whether this model is deprecated"
+        },
+        "deprecationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when model will be/was deprecated"
+        }
+      }
+    },
+    "customProvider": {
+      "type": "object",
+      "required": ["id", "name", "baseUrl", "defaultModel", "models"],
+      "description": "User-defined OpenAI-compatible provider",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^custom_[a-z0-9_]+$",
+          "description": "Unique identifier (must start with 'custom_')"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Base URL for API calls (must be OpenAI-compatible)"
+        },
+        "defaultModel": {
+          "type": "string",
+          "description": "Default model ID"
+        },
+        "models": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/model"
+          }
+        },
+        "headers": {
+          "type": "object",
+          "description": "Additional headers to include in requests",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

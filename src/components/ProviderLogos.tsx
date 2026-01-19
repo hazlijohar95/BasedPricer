@@ -1,7 +1,9 @@
 /**
  * AI Provider Logo Components
- * Official brand logos for OpenAI, Anthropic, and OpenRouter
+ * Official brand logos for all supported AI providers
  */
+
+import type { AIProvider } from '../services/api-keys';
 
 interface LogoProps {
   size?: number;
@@ -36,17 +38,54 @@ export function AnthropicLogo({ size = 20, className = '' }: LogoProps) {
   );
 }
 
+// OpenRouter - official logo
 export function OpenRouterLogo({ size = 20, className = '' }: LogoProps) {
+  return (
+    <img
+      src="/logos/openrouter.svg"
+      width={size}
+      height={size}
+      alt="OpenRouter"
+      className={`object-contain ${className}`}
+    />
+  );
+}
+
+// MiniMax - sound wave icon (gradient from pink to orange)
+export function MiniMaxLogo({ size = 20, className = '' }: LogoProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill="none"
       className={className}
     >
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+      <defs>
+        <linearGradient id="minimax-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#e84a5f" />
+          <stop offset="100%" stopColor="#ff8c42" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="8" width="2.5" height="8" rx="1.25" fill="url(#minimax-grad)" />
+      <rect x="6.5" y="5" width="2.5" height="14" rx="1.25" fill="url(#minimax-grad)" />
+      <rect x="11" y="2" width="2.5" height="20" rx="1.25" fill="url(#minimax-grad)" />
+      <rect x="15.5" y="5" width="2.5" height="14" rx="1.25" fill="url(#minimax-grad)" />
+      <rect x="20" y="8" width="2.5" height="8" rx="1.25" fill="url(#minimax-grad)" />
     </svg>
+  );
+}
+
+// GLM (Zhipu) - using actual logo file
+export function GLMLogo({ size = 20, className = '' }: LogoProps) {
+  return (
+    <img
+      src="/logos/glm.svg"
+      width={size}
+      height={size}
+      alt="GLM"
+      className={`object-contain ${className}`}
+    />
   );
 }
 
@@ -65,7 +104,7 @@ export function GitHubLogo({ size = 20, className = '' }: LogoProps) {
 }
 
 // Provider logo component that selects the right logo
-export function ProviderLogo({ provider, size = 20, className = '' }: { provider: 'openai' | 'anthropic' | 'openrouter'; size?: number; className?: string }) {
+export function ProviderLogo({ provider, size = 20, className = '' }: { provider: AIProvider; size?: number; className?: string }) {
   switch (provider) {
     case 'openai':
       return <OpenAILogo size={size} className={className} />;
@@ -73,5 +112,43 @@ export function ProviderLogo({ provider, size = 20, className = '' }: { provider
       return <AnthropicLogo size={size} className={className} />;
     case 'openrouter':
       return <OpenRouterLogo size={size} className={className} />;
+    case 'minimax':
+      return <MiniMaxLogo size={size} className={className} />;
+    case 'glm':
+      return <GLMLogo size={size} className={className} />;
   }
 }
+
+// Provider colors for consistent branding
+export const PROVIDER_COLORS: Record<AIProvider, { bg: string; text: string; border: string; accent: string }> = {
+  openai: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    accent: 'text-emerald-600',
+  },
+  anthropic: {
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+    border: 'border-orange-200',
+    accent: 'text-orange-600',
+  },
+  openrouter: {
+    bg: 'bg-purple-50',
+    text: 'text-purple-700',
+    border: 'border-purple-200',
+    accent: 'text-purple-600',
+  },
+  minimax: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    accent: 'text-blue-600',
+  },
+  glm: {
+    bg: 'bg-indigo-50',
+    text: 'text-indigo-700',
+    border: 'border-indigo-200',
+    accent: 'text-indigo-600',
+  },
+};

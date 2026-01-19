@@ -9,6 +9,8 @@ import {
 } from '../utils/costCalculator';
 import { defaultTiers, type Tier } from '../data/tiers';
 import { features as defaultFeatures, type Feature } from '../data/features';
+import { type BusinessType, type PricingModelType, BUSINESS_TYPES } from '../data/business-types';
+import { getTierTemplatesForBusinessType, convertTemplatesToTiers } from '../data/tier-templates';
 
 // ============================================================================
 // Types
@@ -32,6 +34,11 @@ export interface PricingState {
   // Pricing scenario (from Calculator)
   utilizationRate: number;
   tierDistribution: Record<string, number>;
+
+  // Business type (from analysis)
+  businessType: BusinessType | null;
+  businessTypeConfidence: number;
+  pricingModelType: PricingModelType;
 }
 
 export interface PricingContextValue extends PricingState {
@@ -74,6 +81,16 @@ export interface PricingContextValue extends PricingState {
   // Actions - Scenario
   setUtilizationRate: (rate: number) => void;
   setTierDistribution: (distribution: Record<string, number>) => void;
+
+  // Actions - Business Type
+  setBusinessType: (type: BusinessType, confidence: number) => void;
+  setPricingModelType: (model: PricingModelType) => void;
+  applyBusinessTypeTemplate: (businessType: BusinessType) => void;
+
+  // Actions - Tier Management
+  setTierCount: (count: number) => void;
+  addTier: () => void;
+  removeTier: (tierId: string) => void;
 
   // Actions - Utility
   resetToDefaults: () => void;
@@ -165,6 +182,9 @@ const DEFAULT_STATE: PricingState = {
     pro: 15,
     enterprise: 5,
   },
+  businessType: null,
+  businessTypeConfidence: 0,
+  pricingModelType: 'feature_tiered',
 };
 
 // ============================================================================
@@ -378,6 +398,99 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // -------------------------------------------------------------------------
+  // Actions - Business Type
+  // -------------------------------------------------------------------------
+
+  const setBusinessType = useCallback((type: BusinessType, confidence: number) => {
+    setState(prev => ({
+      ...prev,
+      businessType: type,
+      businessTypeConfidence: confidence,
+      pricingModelType: BUSINESS_TYPES[type]?.pricingModel ?? 'feature_tiered',
+    }));
+  }, []);
+
+  const setPricingModelType = useCallback((model: PricingModelType) => {
+    setState(prev => ({ ...prev, pricingModelType: model }));
+  }, []);
+
+  const applyBusinessTypeTemplate = useCallback((businessType: BusinessType) => {
+    const templateSet = getTierTemplatesForBusinessType(businessType);
+    const newTiers = convertTemplatesToTiers(templateSet.tiers, businessType);
+    setState(prev => ({
+      ...prev,
+      businessType,
+      pricingModelType: BUSINESS_TYPES[businessType]?.pricingModel ?? 'feature_tiered',
+      tiers: newTiers,
+    }));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Actions - Tier Management
+  // -------------------------------------------------------------------------
+
+  const setTierCount = useCallback((count: number) => {
+    setState(prev => {
+      const currentCount = prev.tiers.length;
+      if (count === currentCount) return prev;
+
+      if (count > currentCount) {
+        // Add tiers - use single timestamp base to avoid ID collision in fast loops
+        const baseTimestamp = Date.now();
+        const newTiers = [...prev.tiers];
+        for (let i = currentCount; i < count; i++) {
+          newTiers.push({
+            id: `tier-${baseTimestamp}-${i}`,
+            name: `Tier ${i + 1}`,
+            tagline: 'New tier',
+            targetAudience: 'Describe target audience',
+            monthlyPriceMYR: 0,
+            annualPriceMYR: 0,
+            status: 'coming_soon',
+            limits: [],
+            includedFeatures: [],
+            excludedFeatures: [],
+            highlightFeatures: [],
+          });
+        }
+        return { ...prev, tiers: newTiers };
+      } else {
+        // Remove tiers from the end
+        return { ...prev, tiers: prev.tiers.slice(0, count) };
+      }
+    });
+  }, []);
+
+  const addTier = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      tiers: [
+        ...prev.tiers,
+        {
+          id: `tier-${Date.now()}`,
+          name: `Tier ${prev.tiers.length + 1}`,
+          tagline: 'New tier',
+          targetAudience: 'Describe target audience',
+          monthlyPriceMYR: 0,
+          annualPriceMYR: 0,
+          status: 'coming_soon',
+          limits: [],
+          includedFeatures: [],
+          excludedFeatures: [],
+          highlightFeatures: [],
+        },
+      ],
+    }));
+  }, []);
+
+  const removeTier = useCallback((tierId: string) => {
+    setState(prev => ({
+      ...prev,
+      tiers: prev.tiers.filter(t => t.id !== tierId),
+    }));
+  }, []);
+
+  // -------------------------------------------------------------------------
   // Actions - Utility
   // -------------------------------------------------------------------------
 
@@ -426,6 +539,12 @@ export function PricingProvider({ children }: { children: ReactNode }) {
     importCodebaseFeatures,
     setUtilizationRate,
     setTierDistribution,
+    setBusinessType,
+    setPricingModelType,
+    applyBusinessTypeTemplate,
+    setTierCount,
+    addTier,
+    removeTier,
     resetToDefaults,
     loadPreset,
   };
@@ -452,3 +571,4 @@ export function usePricing(): PricingContextValue {
 // Re-export types for convenience
 export type { VariableCostItem, FixedCostItem } from '../utils/costCalculator';
 export type { Feature, FeatureSource } from '../data/features';
+export type { BusinessType, PricingModelType } from '../data/business-types';

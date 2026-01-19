@@ -1,4 +1,8 @@
 import { features } from './features';
+import { type CostRates, DEFAULT_COST_RATES } from '../utils/costRates';
+
+// Re-export CostRates and DEFAULT_COST_RATES for backward compatibility
+export { type CostRates, DEFAULT_COST_RATES } from '../utils/costRates';
 
 export interface TierLimit {
   featureId: string;
@@ -173,10 +177,10 @@ export const defaultTiers: Tier[] = [
     id: 'pro',
     name: 'Pro',
     tagline: 'For growing businesses',
-    monthlyPriceMYR: 0, // To be decided
-    annualPriceMYR: 0,
+    monthlyPriceMYR: 79,
+    annualPriceMYR: 790, // ~17% discount (79 * 12 = 948, discount = 158)
     annualDiscount: 17,
-    status: 'coming_soon',
+    status: 'active',
     targetAudience: 'Growing SMEs, small accounting practices',
     limits: [
       { featureId: 'invoice_create', limit: 500, unit: 'invoices/month' },
@@ -289,19 +293,6 @@ export const unlimitedTierDefaults = {
   dataroom_storage: 100, // GB
 };
 
-// Default cost rates (should match PricingContext presets)
-// These are the single source of truth for cost rates
-export interface CostRates {
-  extractionCostPerUnit: number; // MYR per extraction/document
-  emailCostPerUnit: number;      // MYR per email
-  storageCostPerGB: number;      // MYR per GB/month
-}
-
-export const DEFAULT_COST_RATES: CostRates = {
-  extractionCostPerUnit: 0.15,  // MYR 0.15 per extraction (matches OCR preset)
-  emailCostPerUnit: 0.005,      // MYR 0.005 per email
-  storageCostPerGB: 0.07,       // MYR 0.07 per GB/month
-};
 
 // Helper function to calculate estimated variable costs per tier
 // Now accepts cost rates as parameter to stay in sync with COGS calculator

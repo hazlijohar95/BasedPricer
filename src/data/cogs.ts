@@ -1,8 +1,15 @@
 // COGS (Cost of Goods Sold) Configuration
 // All costs are in MYR unless specified
 
-// Exchange rate for USD to MYR (update as needed)
-export const USD_TO_MYR = 4.47;
+import { getExchangeRateSync, getFallbackRate } from '../services/exchangeRate';
+
+// Exchange rate for USD to MYR
+// Uses cached rate from API service, falls back to static rate if unavailable
+// The rate is fetched asynchronously and cached for 24 hours
+export const USD_TO_MYR = getExchangeRateSync();
+
+// Fallback rate for reference (used when API is unavailable)
+export const USD_TO_MYR_FALLBACK = getFallbackRate();
 
 export interface CostItem {
   id: string;
@@ -10,8 +17,9 @@ export interface CostItem {
   provider: string;
   category: CostCategory;
   pricingModel: 'per_unit' | 'per_1m_tokens' | 'percentage' | 'fixed_monthly' | 'tiered';
-  unitCostUSD?: number;
+  unitCostUSD?: number;         // For per_1m_tokens: input token cost
   unitCostMYR?: number;
+  outputCostUSD?: number;       // For AI models: output token cost per 1M tokens
   percentageFee?: number;
   fixedFeeUSD?: number;
   fixedFeeMYR?: number;
@@ -41,16 +49,19 @@ export const costCategories: Record<CostCategory, { name: string; icon: string }
 
 export const costItems: CostItem[] = [
   // AI Models
+  // Pricing includes both input and output token costs
+  // Total cost = (inputTokens × inputRate) + (outputTokens × outputRate)
   {
     id: 'mistral_large_text',
     name: 'Mistral Large (Text)',
     provider: 'Mistral AI',
     category: 'ai_models',
     pricingModel: 'per_1m_tokens',
-    unitCostUSD: 2.00, // input
-    unit: '1M input tokens',
+    unitCostUSD: 2.00,    // Input: $2/1M tokens
+    outputCostUSD: 6.00,  // Output: $6/1M tokens
+    unit: '1M tokens',
     description: 'Text processing and reasoning',
-    notes: 'Output: $6/1M tokens'
+    notes: 'Input: $2/1M, Output: $6/1M tokens'
   },
   {
     id: 'mistral_vision',
@@ -58,10 +69,11 @@ export const costItems: CostItem[] = [
     provider: 'Mistral AI',
     category: 'ai_models',
     pricingModel: 'per_1m_tokens',
-    unitCostUSD: 3.00, // input
-    unit: '1M input tokens',
+    unitCostUSD: 3.00,    // Input: $3/1M tokens
+    outputCostUSD: 8.00,  // Output: $8/1M tokens
+    unit: '1M tokens',
     description: 'Document OCR and vision-based extraction',
-    notes: 'Output: $8/1M tokens. Primary cost driver for extractions.'
+    notes: 'Input: $3/1M, Output: $8/1M tokens. Primary cost driver for extractions.'
   },
   {
     id: 'deepseek_reasoner',
@@ -69,10 +81,11 @@ export const costItems: CostItem[] = [
     provider: 'DeepSeek',
     category: 'ai_models',
     pricingModel: 'per_1m_tokens',
-    unitCostUSD: 0.55, // input
-    unit: '1M input tokens',
+    unitCostUSD: 0.55,    // Input: $0.55/1M tokens
+    outputCostUSD: 2.19,  // Output: $2.19/1M tokens
+    unit: '1M tokens',
     description: 'COA mapping and business reasoning',
-    notes: 'Output: $2.19/1M tokens'
+    notes: 'Input: $0.55/1M, Output: $2.19/1M tokens'
   },
   {
     id: 'deepseek_v3',
@@ -80,10 +93,11 @@ export const costItems: CostItem[] = [
     provider: 'DeepSeek',
     category: 'ai_models',
     pricingModel: 'per_1m_tokens',
-    unitCostUSD: 0.27, // input
-    unit: '1M input tokens',
+    unitCostUSD: 0.27,    // Input: $0.27/1M tokens
+    outputCostUSD: 1.10,  // Output: $1.10/1M tokens
+    unit: '1M tokens',
     description: 'General AI tasks, classification',
-    notes: 'Output: $1.10/1M tokens. Very cost-effective.'
+    notes: 'Input: $0.27/1M, Output: $1.10/1M tokens. Very cost-effective.'
   },
 
   // Storage
@@ -222,51 +236,60 @@ export const costItems: CostItem[] = [
 ];
 
 // Estimated cost per action (for quick calculations)
+// USD costs are defined here and converted to MYR dynamically
 export interface ActionCost {
   actionId: string;
   actionName: string;
-  estimatedCostMYR: number;
+  estimatedCostUSD: number;  // Base cost in USD
+  estimatedCostMYR: number;  // Calculated from USD * exchange rate
   breakdown: string;
 }
 
-export const actionCosts: ActionCost[] = [
+// Define base costs in USD for maintainability
+const actionCostsUSD = [
   {
     actionId: 'extraction_session',
     actionName: 'Document Extraction (1 doc, ~10 pages, ~50 items)',
-    estimatedCostMYR: 0.30,
+    estimatedCostUSD: 0.065, // Average of $0.025-0.033 per doc + DeepSeek processing ~$0.03
     breakdown: 'Mistral Vision: ~$0.025-0.033 per document, plus DeepSeek for processing'
   },
   {
     actionId: 'line_item_extraction',
     actionName: 'Single Line Item Extraction',
-    estimatedCostMYR: 0.006,
+    estimatedCostUSD: 0.001, // Average of $0.0007-0.0012
     breakdown: 'Part of vision processing, ~$0.0007-0.0012 per item'
   },
   {
     actionId: 'coa_mapping',
     actionName: 'COA Mapping (per transaction)',
-    estimatedCostMYR: 0.01,
+    estimatedCostUSD: 0.0022, // DeepSeek Reasoner at ~$0.55/1M tokens input, ~500 tokens
     breakdown: 'DeepSeek Reasoner call with caching at 85% confidence'
   },
   {
     actionId: 'journal_entry',
     actionName: 'Journal Entry Generation',
-    estimatedCostMYR: 0.02,
+    estimatedCostUSD: 0.0045, // DeepSeek reasoning, ~1000 tokens
     breakdown: 'DeepSeek reasoning for double-entry bookkeeping'
   },
   {
     actionId: 'email_send',
     actionName: 'Send Email (invoice/reminder)',
-    estimatedCostMYR: 0.005,
+    estimatedCostUSD: 0.001, // Resend pricing at scale
     breakdown: 'Resend: ~$0.001/email at scale'
   },
   {
     actionId: 'storage_gb_month',
     actionName: 'Storage (1 GB/month)',
-    estimatedCostMYR: 0.07,
+    estimatedCostUSD: 0.015, // R2 storage pricing
     breakdown: 'R2: $0.015/GB/month'
   }
-];
+] as const;
+
+// Convert to MYR using current exchange rate
+export const actionCosts: ActionCost[] = actionCostsUSD.map(cost => ({
+  ...cost,
+  estimatedCostMYR: cost.estimatedCostUSD * USD_TO_MYR,
+}));
 
 // Monthly fixed costs (infrastructure baseline)
 export const monthlyFixedCosts = {

@@ -1,14 +1,36 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Copy, DownloadSimple, MagnifyingGlass, Plus, X, Star, Infinity } from '@phosphor-icons/react';
+import { Copy, DownloadSimple, MagnifyingGlass, Plus, X, Star, Infinity, ArrowCounterClockwise, Lightning } from '@phosphor-icons/react';
 import { calculateTierVariableCosts, type Tier, type TierLimit } from '../data/tiers';
 import { featureCategories, type FeatureCategory } from '../data/features';
 import { usePricing } from '../context/PricingContext';
+import { deriveCostRatesFromVariableCosts } from '../utils/costRates';
+import { BUSINESS_TYPES, type BusinessType } from '../data/business-types';
+import { getTierTemplatesForBusinessType, getRecommendedTierCount } from '../data/tier-templates';
 
 type ViewMode = 'overview' | 'limits' | 'features' | 'highlights';
 
 export function TierConfigurator() {
-  // Get tiers and features from global context
-  const { tiers, setTiers, updateTier: contextUpdateTier, features } = usePricing();
+  // Get tiers, features, and variableCosts from global context
+  const {
+    tiers,
+    setTiers,
+    updateTier: contextUpdateTier,
+    features,
+    variableCosts,
+    utilizationRate,
+    businessType,
+    businessTypeConfidence,
+    applyBusinessTypeTemplate,
+    setTierCount,
+    addTier,
+    removeTier,
+  } = usePricing();
+
+  // Derive cost rates from context's variableCosts (single source of truth)
+  // This ensures TierConfigurator uses the same rates as COGSCalculator and PricingCalculator
+  const costRates = useMemo(() => {
+    return deriveCostRatesFromVariableCosts(variableCosts);
+  }, [variableCosts]);
 
   const [selectedTierId, setSelectedTierId] = useState<string>('basic');
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
@@ -70,26 +92,28 @@ export function TierConfigurator() {
   }, [tiers, setTiers]);
 
   // Memoized cost calculations for selected tier
+  // Now uses costRates derived from context to stay in sync with COGS calculator
   const { costs, margin } = useMemo(() => {
-    const tierCosts = calculateTierVariableCosts(selectedTier);
+    const tierCosts = calculateTierVariableCosts(selectedTier, utilizationRate, costRates);
     const tierMargin = selectedTier.monthlyPriceMYR > 0
       ? ((selectedTier.monthlyPriceMYR - tierCosts.total) / selectedTier.monthlyPriceMYR) * 100
       : 0;
     return { costs: tierCosts, margin: tierMargin };
-  }, [selectedTier]);
+  }, [selectedTier, utilizationRate, costRates]);
 
   // Memoized tier costs for all tiers (for the tier cards)
+  // Uses the same costRates and utilizationRate for consistency across the app
   const allTierCosts = useMemo(() => {
     const costsMap = new Map<string, { total: number; margin: number }>();
     tiers.forEach(tier => {
-      const tierCosts = calculateTierVariableCosts(tier);
+      const tierCosts = calculateTierVariableCosts(tier, utilizationRate, costRates);
       const tierMargin = tier.monthlyPriceMYR > 0
         ? ((tier.monthlyPriceMYR - tierCosts.total) / tier.monthlyPriceMYR) * 100
         : 0;
       costsMap.set(tier.id, { total: tierCosts.total, margin: tierMargin });
     });
     return costsMap;
-  }, [tiers]);
+  }, [tiers, utilizationRate, costRates]);
 
   // Features with limits (from context, updates when features change)
   const featuresWithLimits = useMemo(() => features.filter(f => f.hasLimit), [features]);
@@ -151,8 +175,97 @@ export function TierConfigurator() {
         </div>
       </div>
 
+      {/* Business Type & Tier Count Controls */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between">
+          {/* Business Type Indicator */}
+          <div className="flex items-center gap-4">
+            {businessType ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#253ff6]/10 flex items-center justify-center">
+                  <Lightning size={16} weight="fill" className="text-[#253ff6]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      {BUSINESS_TYPES[businessType]?.name ?? businessType}
+                    </span>
+                    {businessTypeConfidence && (
+                      <span className="text-xs text-gray-400">
+                        ({Math.round(businessTypeConfidence * 100)}% match)
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {BUSINESS_TYPES[businessType]?.pricingModel ?? 'Feature-tiered pricing'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <Lightning size={16} className="text-gray-400" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">No business type detected</span>
+                  <p className="text-xs text-gray-500">Analyze a codebase to detect type</p>
+                </div>
+              </div>
+            )}
+
+            {/* Reset to Template Button */}
+            {businessType && (
+              <button
+                onClick={() => applyBusinessTypeTemplate(businessType)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#253ff6] bg-[#253ff6]/10 rounded-lg hover:bg-[#253ff6]/20 transition-colors"
+              >
+                <ArrowCounterClockwise size={14} weight="bold" />
+                Reset to Template
+              </button>
+            )}
+          </div>
+
+          {/* Tier Count Selector */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">Tiers:</span>
+            <div className="flex gap-1">
+              {[2, 3, 4, 5].map((count) => {
+                const isActive = tiers.length === count;
+                const isRecommended = businessType && getRecommendedTierCount(businessType) === count;
+                return (
+                  <button
+                    key={count}
+                    onClick={() => setTierCount(count)}
+                    className={`relative w-9 h-9 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? 'bg-[#253ff6] text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {count}
+                    {isRecommended && !isActive && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {businessType && (
+              <span className="text-xs text-gray-400">
+                (Recommended: {getRecommendedTierCount(businessType)})
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Tier Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className={`grid gap-4 ${
+        tiers.length === 2 ? 'grid-cols-2' :
+        tiers.length === 3 ? 'grid-cols-3' :
+        tiers.length === 5 ? 'grid-cols-5' :
+        'grid-cols-4'
+      }`}>
         {tiers.map((tier) => {
           const tierData = allTierCosts.get(tier.id);
           const tierCostsTotal = tierData?.total ?? 0;

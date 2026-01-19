@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "analysis-prompts.schema.json",
+  "title": "Analysis Prompts Configuration",
+  "description": "Schema for customizing AI codebase analysis prompts",
+  "type": "object",
+  "required": ["_meta", "systemPrompt", "businessTypes", "userPromptTemplate", "outputSchema"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "_meta": {
+      "type": "object",
+      "required": ["version", "lastUpdated"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "_documentation": {
+      "type": "object",
+      "description": "Documentation for users customizing prompts"
+    },
+    "systemPrompt": {
+      "type": "object",
+      "required": ["role", "objectives", "guidelines", "outputInstruction"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "The AI's role/persona"
+        },
+        "objectives": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Key objectives for the analysis"
+        },
+        "guidelines": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Specific guidelines for analysis"
+        },
+        "outputInstruction": {
+          "type": "string",
+          "description": "Instructions for output format"
+        }
+      }
+    },
+    "businessTypes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "description", "signals", "recommendedPricingModel"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "signals": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "recommendedPricingModel": { "type": "string" },
+          "typicalTiers": { "type": "integer" },
+          "keyMetrics": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "pricingModels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "bestFor": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "considerations": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "userPromptTemplate": {
+      "type": "string",
+      "description": "Template for user prompt with {placeholders}"
+    },
+    "outputSchema": {
+      "type": "object",
+      "description": "Expected JSON structure from AI response"
+    },
+    "analysisSettings": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReadmeChars": {
+          "type": "integer"
+        },
+        "maxSourceFiles": {
+          "type": "integer"
+        },
+        "maxCharsPerFile": {
+          "type": "integer"
+        },
+        "maxConfigFiles": {
+          "type": "integer"
+        },
+        "maxCharsPerConfigFile": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

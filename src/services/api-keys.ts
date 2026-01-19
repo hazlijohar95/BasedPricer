@@ -3,7 +3,7 @@
  * Stores and manages API keys for AI providers in localStorage
  */
 
-export type AIProvider = 'openai' | 'anthropic' | 'openrouter';
+export type AIProvider = 'openai' | 'anthropic' | 'openrouter' | 'minimax' | 'glm';
 
 export interface StoredAPIKey {
   provider: AIProvider;
@@ -25,6 +25,8 @@ const KEY_PATTERNS: Record<AIProvider, RegExp> = {
   openai: /^sk-[a-zA-Z0-9-_]{20,}$/,
   anthropic: /^sk-ant-[a-zA-Z0-9-_]{20,}$/,
   openrouter: /^sk-or-[a-zA-Z0-9-_]{20,}$/,
+  minimax: /^[a-zA-Z0-9]{20,}$/, // MiniMax uses alphanumeric keys
+  glm: /^[a-zA-Z0-9._-]{20,}$/, // Zhipu GLM keys are alphanumeric with dots
 };
 
 // Provider display names
@@ -44,6 +46,16 @@ export const PROVIDER_INFO: Record<AIProvider, { name: string; placeholder: stri
     placeholder: 'sk-or-...',
     docsUrl: 'https://openrouter.ai/keys',
   },
+  minimax: {
+    name: 'MiniMax',
+    placeholder: 'Your API key...',
+    docsUrl: 'https://platform.minimax.io/user-center/basic-information',
+  },
+  glm: {
+    name: 'GLM (Zhipu)',
+    placeholder: 'Your API key...',
+    docsUrl: 'https://z.ai/manage-apikey/apikey-list',
+  },
 };
 
 /**
@@ -58,7 +70,7 @@ export function getStoredKeys(): APIKeyStorage {
   } catch (e) {
     console.error('Failed to load API keys:', e);
   }
-  return { keys: { openai: null, anthropic: null, openrouter: null } };
+  return { keys: { openai: null, anthropic: null, openrouter: null, minimax: null, glm: null } };
 }
 
 /**
@@ -74,7 +86,7 @@ export function getAPIKey(provider: AIProvider): string | null {
  */
 export function getFirstAvailableKey(): { provider: AIProvider; key: string } | null {
   const storage = getStoredKeys();
-  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter'];
+  const providers: AIProvider[] = ['openai', 'anthropic', 'openrouter', 'minimax', 'glm'];
 
   for (const provider of providers) {
     const stored = storage.keys[provider];
@@ -101,6 +113,14 @@ export function validateKeyFormat(provider: AIProvider, key: string): { valid: b
     if (trimmedKey.startsWith('sk-') && trimmedKey.length > 20) {
       return { valid: true };
     }
+  }
+
+  // For MiniMax and GLM, be more lenient - just check minimum length
+  if (provider === 'minimax' || provider === 'glm') {
+    if (trimmedKey.length >= 20) {
+      return { valid: true };
+    }
+    return { valid: false, error: 'API key must be at least 20 characters' };
   }
 
   if (!pattern.test(trimmedKey)) {

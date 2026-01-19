@@ -34,12 +34,22 @@ export interface AnalysisPayload {
   readme?: string;
   srcFiles: FileContent[];
   configFiles: FileContent[];
+  /** Any errors that occurred while fetching individual files (non-fatal) */
+  fetchErrors?: string[];
 }
 
 export interface RateLimitInfo {
   remaining: number;
   limit: number;
   resetAt: Date;
+}
+
+export interface FetchProgressCallback {
+  (progress: {
+    current: number;
+    total: number;
+    currentFile?: string;
+  }): void;
 }
 
 /**
@@ -262,7 +272,7 @@ function filterTreeForAnalysis(tree: TreeItem[]): string[] {
     }
   }
 
-  // Add source files - limit to reasonable size
+  // Add source files - increased limits for better analysis
   const sourceFiles = tree
     .filter(item =>
       item.type === 'blob' &&
@@ -270,20 +280,38 @@ function filterTreeForAnalysis(tree: TreeItem[]): string[] {
       !item.path.includes('.test.') &&
       !item.path.includes('.spec.') &&
       !item.path.includes('__tests__') &&
+      !item.path.includes('__mocks__') &&
       !item.path.includes('node_modules') &&
-      (item.size ?? 0) < 50000 // Skip files > 50KB
+      !item.path.includes('.d.ts') && // Skip type declarations
+      (item.size ?? 0) < 100000 // Skip files > 100KB (increased from 50KB)
     )
     .sort((a, b) => {
-      // Prioritize certain directories
+      // Prioritize certain directories for better feature detection
       const priority = (path: string) => {
-        if (path.startsWith('app/')) return 0;
-        if (path.startsWith('pages/')) return 1;
-        if (path.startsWith('src/')) return 2;
-        return 3;
+        // Highest priority: entry points and layouts
+        if (path.match(/^(app|pages)\/(page|layout|index)\.(ts|tsx|js|jsx)$/)) return 0;
+        if (path.match(/^src\/(App|main|index)\.(ts|tsx|js|jsx)$/)) return 0;
+
+        // High priority: route handlers and API endpoints
+        if (path.includes('/api/')) return 1;
+        if (path.startsWith('app/')) return 2;
+        if (path.startsWith('pages/')) return 2;
+
+        // Medium priority: feature-related directories
+        if (path.includes('/features/')) return 3;
+        if (path.includes('/modules/')) return 3;
+        if (path.includes('/services/')) return 4;
+        if (path.includes('/components/')) return 5;
+        if (path.includes('/lib/')) return 5;
+        if (path.includes('/hooks/')) return 5;
+
+        // Lower priority: other src files
+        if (path.startsWith('src/')) return 6;
+        return 7;
       };
       return priority(a.path) - priority(b.path);
     })
-    .slice(0, 30); // Limit to 30 source files
+    .slice(0, 50); // Increased from 30 to 50 source files
 
   files.push(...sourceFiles.map(f => f.path));
 
@@ -293,7 +321,10 @@ function filterTreeForAnalysis(tree: TreeItem[]): string[] {
 /**
  * Fetch all files needed for analysis
  */
-export async function fetchForAnalysis(url: string): Promise<AnalysisPayload> {
+export async function fetchForAnalysis(
+  url: string,
+  onProgress?: FetchProgressCallback
+): Promise<AnalysisPayload> {
   const parsed = parseGitHubUrl(url);
   if (!parsed) {
     throw new Error('Invalid GitHub URL');
@@ -309,6 +340,9 @@ export async function fetchForAnalysis(url: string): Promise<AnalysisPayload> {
 
   // Filter to relevant files
   const filesToFetch = filterTreeForAnalysis(tree);
+
+  // Report initial progress
+  onProgress?.({ current: 0, total: filesToFetch.length });
 
   // Fetch files in batches to avoid rate limits
   const batchSize = 5;
@@ -332,6 +366,13 @@ export async function fetchForAnalysis(url: string): Promise<AnalysisPayload> {
         errors.push(result.reason?.message ?? 'Unknown error');
       }
     }
+
+    // Report progress after each batch
+    onProgress?.({
+      current: Math.min(i + batchSize, filesToFetch.length),
+      total: filesToFetch.length,
+      currentFile: batch[batch.length - 1],
+    });
 
     // Small delay between batches to be nice to the API
     if (i + batchSize < filesToFetch.length) {
@@ -369,6 +410,7 @@ export async function fetchForAnalysis(url: string): Promise<AnalysisPayload> {
     readme: readmeFile?.content,
     srcFiles,
     configFiles,
+    fetchErrors: errors.length > 0 ? errors : undefined,
   };
 }
 
