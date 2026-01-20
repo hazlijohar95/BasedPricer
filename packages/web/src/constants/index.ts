@@ -167,3 +167,14 @@ export {
   costDriverExists,
   type CostDriverConfig,
 } from './costDrivers';
+
+// Storage keys
+export {
+  STORAGE_KEY,
+  PROJECTS_INDEX_KEY,
+  PROJECT_PREFIX,
+  CURRENT_PROJECT_KEY,
+  DEFAULT_PROJECT_NAME,
+  ONBOARDING_COMPLETE_KEY,
+  LEGACY_PRICING_COSTS_KEY,
+} from './storage';

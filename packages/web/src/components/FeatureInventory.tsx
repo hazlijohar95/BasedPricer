@@ -14,6 +14,7 @@ import {
   User,
   CurrencyDollar,
 } from '@phosphor-icons/react';
+import { generateId } from '@basedpricer/core';
 import { featureCategories, type FeatureCategory, type Feature } from '../data/features';
 import { usePricing, type VariableCostItem } from '../context/PricingContext';
 import { useDebouncedValue } from '../hooks/useDebounce';
@@ -82,7 +83,7 @@ export function FeatureInventory() {
   const handleAddFeature = (newFeature: Omit<Feature, 'id' | 'source' | 'createdAt'>) => {
     const feature: Feature = {
       ...newFeature,
-      id: `manual-${Date.now()}`,
+      id: generateId('manual'),
       source: 'manual',
       createdAt: new Date().toISOString(),
     };

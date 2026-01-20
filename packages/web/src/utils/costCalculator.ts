@@ -6,6 +6,19 @@ import {
   getMarginStyleFromThreshold,
 } from '../constants';
 
+// Import and re-export types from core for consistency
+import type {
+  VariableCostItem as CoreVariableCostItem,
+  FixedCostItem as CoreFixedCostItem,
+  CostBreakdown as CoreCostBreakdown,
+  MarginStatus,
+} from '@basedpricer/core';
+
+// Re-export core types for backwards compatibility
+export type VariableCostItem = CoreVariableCostItem;
+export type FixedCostItem = CoreFixedCostItem;
+export type CostBreakdown = CoreCostBreakdown;
+
 // ============================================================================
 // Rounding Utilities
 // ============================================================================
@@ -45,33 +58,11 @@ export function roundPercentage(value: number, decimals: number = 1): number {
 // Types
 // ============================================================================
 
-export interface VariableCostItem {
-  id: string;
-  name: string;
-  unit: string;
-  costPerUnit: number;
-  usagePerCustomer: number;
-  description: string;
-}
-
-export interface FixedCostItem {
-  id: string;
-  name: string;
-  monthlyCost: number;
-  description: string;
-}
-
-export interface CostBreakdown {
-  variableTotal: number;
-  fixedTotal: number;
-  fixedPerCustomer: number;
-  totalCOGS: number;
-}
-
+// MarginInfo type using core's MarginStatus
 export interface MarginInfo {
   margin: number;
   profit: number;
-  status: 'great' | 'ok' | 'low';
+  status: MarginStatus;
 }
 
 /**

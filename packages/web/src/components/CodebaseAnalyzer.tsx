@@ -19,6 +19,7 @@ import {
   TrendUp,
   Lightning,
 } from '@phosphor-icons/react';
+import { generateId } from '@basedpricer/core';
 import {
   type AIProvider,
   PROVIDER_INFO,
@@ -321,8 +322,8 @@ export function CodebaseAnalyzer() {
 
     const variableCosts = analysisResult.costSuggestions
       .filter(c => c.type === 'variable')
-      .map((c, i) => ({
-        id: `analysis-var-${i}-${Date.now()}`,
+      .map((c) => ({
+        id: generateId('var'),
         name: c.name,
         unit: c.unit,
         costPerUnit: c.cost,
@@ -332,16 +333,16 @@ export function CodebaseAnalyzer() {
 
     const fixedCosts = analysisResult.costSuggestions
       .filter(c => c.type === 'fixed')
-      .map((c, i) => ({
-        id: `analysis-fix-${i}-${Date.now()}`,
+      .map((c) => ({
+        id: generateId('fix'),
         name: c.name,
         monthlyCost: c.cost,
         description: c.description,
       }));
 
     // Map AI-detected features to Feature format
-    const features = analysisResult.features.map((f, i) => ({
-      id: `analysis-feat-${i}-${Date.now()}`,
+    const features = analysisResult.features.map((f) => ({
+      id: generateId('feat'),
       name: f.name,
       description: f.description,
       category: mapToFeatureCategory(f.category),
@@ -364,8 +365,8 @@ export function CodebaseAnalyzer() {
     // Apply AI suggested tiers if available
     if (analysisResult.suggestedTiers && analysisResult.suggestedTiers.length > 0) {
       const USD_TO_MYR = 4.5;
-      const convertedTiers = analysisResult.suggestedTiers.map((st, i) => ({
-        id: `ai-tier-${i}-${Date.now()}`,
+      const convertedTiers = analysisResult.suggestedTiers.map((st) => ({
+        id: generateId('tier'),
         name: st.name,
         tagline: st.description || `${st.name} tier`,
         targetAudience: st.description || `Users looking for ${st.name.toLowerCase()} features`,

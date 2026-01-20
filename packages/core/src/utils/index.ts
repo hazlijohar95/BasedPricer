@@ -147,12 +147,15 @@ export function roundToStep(value: number, step: number): number {
 // ============================================================================
 
 /**
- * Generate a unique ID
+ * Generate a unique ID with optional prefix
+ * Uses timestamp + random suffix for uniqueness
+ * @param prefix - Optional prefix for the ID (e.g., 'tier', 'cost', 'feature')
+ * @returns A unique ID string like 'tier-abc123xyz456' or 'abc123xyz456'
  */
 export function generateId(prefix: string = ''): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
-  return prefix ? `${prefix}_${timestamp}${random}` : `${timestamp}${random}`;
+  const random = Math.random().toString(36).substring(2, 9);
+  return prefix ? `${prefix}-${timestamp}-${random}` : `${timestamp}-${random}`;
 }
 
 /**

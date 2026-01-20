@@ -17,8 +17,6 @@ import {
 } from './pricing';
 import { MARGIN_THRESHOLDS } from '../constants';
 
-type TierKey = 'freemium' | 'basic' | 'pro' | 'enterprise';
-
 const scenarios: Scenario[] = [
   { name: 'Early Stage', distribution: { freemium: 80, basic: 15, pro: 4, enterprise: 1 }, monthlyChurnRate: 5, conversionRate: 3 },
   { name: 'Growth', distribution: { freemium: 70, basic: 20, pro: 8, enterprise: 2 }, monthlyChurnRate: 4, conversionRate: 5 },
@@ -44,15 +42,16 @@ export function PricingCalculator() {
 
   // Derive prices directly from context tiers (single source of truth)
   // No local state duplication - prices come from tiers context
-  const prices = useMemo((): Record<TierKey, number> => {
-    const tierPrices: Record<TierKey, number> = { freemium: 0, basic: 25, pro: 78, enterprise: 500 };
+  // Maps tier IDs to prices dynamically - works with any tier configuration
+  const prices = useMemo((): Record<string, number> => {
+    // Start with default tier prices for backwards compatibility
+    const tierPrices: Record<string, number> = { freemium: 0, basic: 25, pro: 78, enterprise: 500 };
+
+    // Override with actual tier prices from context
     tiers.forEach(tier => {
-      const key = tier.id as TierKey;
-      // Use tier price if set, otherwise use defaults
-      if (key in tierPrices) {
-        tierPrices[key] = tier.monthlyPriceMYR;
-      }
+      tierPrices[tier.id] = tier.monthlyPriceMYR;
     });
+
     return tierPrices;
   }, [tiers]);
 
@@ -214,19 +213,19 @@ export function PricingCalculator() {
   }, [prices.basic]);
 
   // Memoized handler for distribution changes
-  const handleDistributionChange = useCallback((tier: TierKey, newValue: number) => {
+  const handleDistributionChange = useCallback((tierId: string, newValue: number) => {
     setScenario(prev => ({
       ...prev,
-      distribution: { ...prev.distribution, [tier]: newValue }
+      distribution: { ...prev.distribution, [tierId]: newValue }
     }));
   }, []);
 
   // Handler for price changes - updates context directly
-  const handlePriceChange = useCallback((tier: TierKey, value: number) => {
+  const handlePriceChange = useCallback((tierId: string, value: number) => {
     // Find the tier and update its price in context
-    const tierToUpdate = tiers.find(t => t.id === tier);
+    const tierToUpdate = tiers.find(t => t.id === tierId);
     if (tierToUpdate) {
-      updateTier(tier, { monthlyPriceMYR: Math.max(0, value) });
+      updateTier(tierId, { monthlyPriceMYR: Math.max(0, value) });
     }
   }, [tiers, updateTier]);
 

@@ -39,7 +39,7 @@ export { SourceBadge, type FeatureSource } from './SourceBadge';
 export { TabToggle, type TabOption } from './TabToggle';
 
 // Onboarding
-export { OnboardingModal } from './OnboardingModal';
+export { WelcomePanel } from './WelcomePanel';
 
 // Validated inputs
 export { ValidatedInput, NumberInput, CurrencyInput } from './ValidatedInput';

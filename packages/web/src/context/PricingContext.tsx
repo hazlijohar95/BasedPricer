@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
+import { generateId } from '@basedpricer/core';
 import {
   type VariableCostItem,
   type FixedCostItem,
@@ -11,8 +12,21 @@ import { defaultTiers, type Tier } from '../data/tiers';
 import { features as defaultFeatures, type Feature } from '../data/features';
 import { type BusinessType, type PricingModelType, BUSINESS_TYPES } from '../data/business-types';
 import { getTierTemplatesForBusinessType, convertTemplatesToTiers } from '../data/tier-templates';
+import { COST_PRESETS } from '../data/cost-presets';
 import type { ToastData } from '../components/shared/Toast';
-import { DEFAULT_CURRENCY, type CurrencyCode } from '../constants';
+import {
+  DEFAULT_CURRENCY,
+  type CurrencyCode,
+  STORAGE_KEY,
+  PROJECTS_INDEX_KEY,
+  PROJECT_PREFIX,
+  CURRENT_PROJECT_KEY,
+  DEFAULT_PROJECT_NAME,
+} from '../constants';
+
+// Re-export COST_PRESETS for backwards compatibility
+export { COST_PRESETS } from '../data/cost-presets';
+export type { CostPreset, CostPresetKey } from '../data/cost-presets';
 
 // ============================================================================
 // Types
@@ -186,74 +200,6 @@ function createTierDisplayConfigsFromTiers(tiers: Tier[]): Record<string, TierDi
 }
 
 // ============================================================================
-// Default Presets
-// ============================================================================
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const COST_PRESETS = {
-  'ai-saas': {
-    name: 'AI/Document SaaS',
-    description: 'AI-powered document processing, extraction, automation',
-    variableCosts: [
-      { id: 'ocr', name: 'Document scan (OCR)', unit: 'documents', costPerUnit: 0.15, usagePerCustomer: 20, description: 'Vision AI to extract text from images' },
-      { id: 'ai-processing', name: 'AI processing', unit: 'items', costPerUnit: 0.008, usagePerCustomer: 150, description: 'LLM reasoning, classification, mapping' },
-      { id: 'email', name: 'Transactional email', unit: 'emails', costPerUnit: 0.005, usagePerCustomer: 50, description: 'Notifications, alerts, reminders' },
-      { id: 'storage', name: 'Cloud storage', unit: 'GB', costPerUnit: 0.07, usagePerCustomer: 2, description: 'File storage per month' },
-    ],
-    fixedCosts: [
-      { id: 'database', name: 'Database', monthlyCost: 112, description: 'PostgreSQL, Supabase, etc.' },
-      { id: 'compute', name: 'Compute', monthlyCost: 224, description: 'Servers, containers' },
-      { id: 'apis', name: 'Third-party APIs', monthlyCost: 54, description: 'Currency, maps, etc.' },
-      { id: 'monitoring', name: 'Monitoring', monthlyCost: 45, description: 'Logging, analytics' },
-      { id: 'email-base', name: 'Email service', monthlyCost: 89, description: 'Base subscription' },
-      { id: 'misc', name: 'Other', monthlyCost: 89, description: 'Domain, SSL, misc' },
-    ],
-  },
-  'api-platform': {
-    name: 'API Platform',
-    description: 'API-as-a-service, developer tools',
-    variableCosts: [
-      { id: 'api-calls', name: 'API calls', unit: 'requests', costPerUnit: 0.0001, usagePerCustomer: 10000, description: 'Per API request processed' },
-      { id: 'compute-time', name: 'Compute time', unit: 'seconds', costPerUnit: 0.00001, usagePerCustomer: 5000, description: 'CPU/GPU processing time' },
-      { id: 'bandwidth', name: 'Bandwidth', unit: 'GB', costPerUnit: 0.05, usagePerCustomer: 5, description: 'Data transfer out' },
-      { id: 'storage', name: 'Storage', unit: 'GB', costPerUnit: 0.02, usagePerCustomer: 1, description: 'Data storage' },
-    ],
-    fixedCosts: [
-      { id: 'infrastructure', name: 'Infrastructure', monthlyCost: 500, description: 'Servers, load balancers' },
-      { id: 'database', name: 'Database', monthlyCost: 200, description: 'Primary database' },
-      { id: 'cdn', name: 'CDN', monthlyCost: 50, description: 'Content delivery' },
-      { id: 'monitoring', name: 'Monitoring', monthlyCost: 100, description: 'APM, logging' },
-    ],
-  },
-  'marketplace': {
-    name: 'Marketplace/Platform',
-    description: 'Two-sided marketplace, e-commerce platform',
-    variableCosts: [
-      { id: 'payment-processing', name: 'Payment processing', unit: 'transactions', costPerUnit: 0.50, usagePerCustomer: 10, description: '~2-3% + fixed per transaction' },
-      { id: 'email', name: 'Emails', unit: 'emails', costPerUnit: 0.003, usagePerCustomer: 100, description: 'Order confirmations, notifications' },
-      { id: 'sms', name: 'SMS notifications', unit: 'messages', costPerUnit: 0.05, usagePerCustomer: 10, description: 'Order updates, OTP' },
-      { id: 'storage', name: 'Media storage', unit: 'GB', costPerUnit: 0.03, usagePerCustomer: 0.5, description: 'Product images, files' },
-    ],
-    fixedCosts: [
-      { id: 'infrastructure', name: 'Infrastructure', monthlyCost: 300, description: 'Servers, CDN' },
-      { id: 'database', name: 'Database', monthlyCost: 150, description: 'Primary + cache' },
-      { id: 'search', name: 'Search service', monthlyCost: 100, description: 'Algolia, Elasticsearch' },
-      { id: 'support-tools', name: 'Support tools', monthlyCost: 50, description: 'Helpdesk, chat' },
-    ],
-  },
-  'empty': {
-    name: 'Start from scratch',
-    description: 'Build your own cost model',
-    variableCosts: [
-      { id: 'item-1', name: 'Cost item 1', unit: 'units', costPerUnit: 0.01, usagePerCustomer: 100, description: 'Description here' },
-    ],
-    fixedCosts: [
-      { id: 'fixed-1', name: 'Fixed cost 1', monthlyCost: 100, description: 'Description here' },
-    ],
-  },
-};
-
-// ============================================================================
 // Default State
 // ============================================================================
 
@@ -358,17 +304,54 @@ const EMPTY_STATE: PricingState = {
 // Storage
 // ============================================================================
 
-const STORAGE_KEY = 'cynco-pricing-state';
-const PROJECTS_INDEX_KEY = 'cynco-projects';
-const PROJECT_PREFIX = 'cynco-project-';
-const CURRENT_PROJECT_KEY = 'cynco-current-project';
-const DEFAULT_PROJECT_NAME = 'My SaaS Product';
+/**
+ * Validates that loaded state has the expected structure
+ * Returns sanitized partial state or null if invalid
+ */
+function validateLoadedState(data: unknown): Partial<PricingState> | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  const state = data as Record<string, unknown>;
+
+  // Validate core arrays exist and are arrays
+  if (state.variableCosts && !Array.isArray(state.variableCosts)) {
+    console.warn('Invalid variableCosts in loaded state');
+    return null;
+  }
+  if (state.fixedCosts && !Array.isArray(state.fixedCosts)) {
+    console.warn('Invalid fixedCosts in loaded state');
+    return null;
+  }
+  if (state.tiers && !Array.isArray(state.tiers)) {
+    console.warn('Invalid tiers in loaded state');
+    return null;
+  }
+  if (state.features && !Array.isArray(state.features)) {
+    console.warn('Invalid features in loaded state');
+    return null;
+  }
+
+  // Validate numeric fields
+  if (state.customerCount !== undefined && typeof state.customerCount !== 'number') {
+    console.warn('Invalid customerCount in loaded state');
+    return null;
+  }
+  if (state.selectedPrice !== undefined && typeof state.selectedPrice !== 'number') {
+    console.warn('Invalid selectedPrice in loaded state');
+    return null;
+  }
+
+  return state as Partial<PricingState>;
+}
 
 function loadFromStorage(): Partial<PricingState> | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      return validateLoadedState(parsed);
     }
   } catch (e) {
     console.warn('Failed to load pricing state from localStorage:', e);
@@ -418,7 +401,11 @@ function saveProjectData(name: string, state: PricingState): void {
 function loadProjectData(name: string): Partial<PricingState> | null {
   try {
     const stored = localStorage.getItem(PROJECT_PREFIX + name);
-    return stored ? JSON.parse(stored) : null;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return validateLoadedState(parsed);
+    }
+    return null;
   } catch {
     return null;
   }
@@ -823,12 +810,11 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       if (count === currentCount) return prev;
 
       if (count > currentCount) {
-        // Add tiers - use timestamp + random suffix to avoid ID collision
+        // Add tiers
         const newTiers = [...prev.tiers];
         for (let i = currentCount; i < count; i++) {
-          const uniqueId = `tier-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           newTiers.push({
-            id: uniqueId,
+            id: generateId('tier'),
             name: `Tier ${i + 1}`,
             tagline: 'New tier',
             targetAudience: 'Describe target audience',
@@ -856,7 +842,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       tiers: [
         ...prev.tiers,
         {
-          id: `tier-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: generateId('tier'),
           name: `Tier ${prev.tiers.length + 1}`,
           tagline: 'New tier',
           targetAudience: 'Describe target audience',
@@ -930,7 +916,7 @@ export function PricingProvider({ children }: { children: ReactNode }) {
   // -------------------------------------------------------------------------
 
   const showToast = useCallback((type: 'success' | 'error' | 'info', message: string, duration?: number) => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateId('toast');
     setToasts(prev => [...prev, { id, type, message, duration }]);
   }, []);
 

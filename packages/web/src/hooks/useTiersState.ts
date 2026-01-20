@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { generateId } from '@basedpricer/core';
 import { type Tier } from '../data/tiers';
 
 // ============================================================================
@@ -84,7 +85,7 @@ function createTierDisplayConfigsFromTiers(tiers: Tier[]): Record<string, TierDi
 
 function createNewTier(index: number): Tier {
   return {
-    id: `tier-${Date.now()}-${index}`,
+    id: generateId('tier'),
     name: `Tier ${index + 1}`,
     tagline: 'Your tagline here',
     targetAudience: 'Target audience',

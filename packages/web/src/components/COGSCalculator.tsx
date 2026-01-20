@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Info, Plus, X, PencilSimple, Gauge } from '@phosphor-icons/react';
-import { usePricing, COST_PRESETS, type VariableCostItem, type FixedCostItem } from '../context/PricingContext';
+import { generateId } from '@basedpricer/core';
+import { usePricing, type VariableCostItem, type FixedCostItem } from '../context/PricingContext';
+import { COST_PRESETS, type CostPresetKey } from '../data/cost-presets';
 import { getMarginStyle, calculateCOGSBreakdown } from '../utils/costCalculator';
 
 export function COGSCalculator() {
@@ -25,7 +27,7 @@ export function COGSCalculator() {
     loadPreset,
   } = usePricing();
 
-  const [selectedPresetKey, setSelectedPresetKey] = useState<keyof typeof COST_PRESETS>('ai-saas');
+  const [selectedPresetKey, setSelectedPresetKey] = useState<CostPresetKey>('ai-saas');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [showRealisticUsage, setShowRealisticUsage] = useState(false);
 
@@ -44,7 +46,7 @@ export function COGSCalculator() {
     : profit;
 
   // Load preset handler
-  const handleLoadPreset = (presetKey: keyof typeof COST_PRESETS) => {
+  const handleLoadPreset = (presetKey: CostPresetKey) => {
     setSelectedPresetKey(presetKey);
     loadPreset(COST_PRESETS[presetKey]);
   };
@@ -54,8 +56,7 @@ export function COGSCalculator() {
 
   // Add new variable cost
   const addVariableCost = () => {
-    // Use timestamp + random suffix to prevent ID collisions
-    const newId = `var-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newId = generateId('var');
     const newCost: VariableCostItem = {
       id: newId,
       name: 'New cost item',
@@ -70,8 +71,7 @@ export function COGSCalculator() {
 
   // Add new fixed cost
   const addFixedCost = () => {
-    // Use timestamp + random suffix to prevent ID collisions
-    const newId = `fix-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const newId = generateId('fix');
     const newCost: FixedCostItem = {
       id: newId,
       name: 'New fixed cost',
@@ -105,7 +105,7 @@ export function COGSCalculator() {
               {Object.entries(COST_PRESETS).map(([key, preset]) => (
                 <button
                   key={key}
-                  onClick={() => handleLoadPreset(key as keyof typeof COST_PRESETS)}
+                  onClick={() => handleLoadPreset(key as CostPresetKey)}
                   className={`text-xs px-2 py-1 rounded transition-colors ${
                     selectedPresetKey === key
                       ? 'bg-blue-600 text-white'

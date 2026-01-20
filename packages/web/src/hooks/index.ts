@@ -1,26 +1,27 @@
 /**
  * Custom hooks for pricing state management
  * Focused hooks provide ergonomic subsets of PricingContext
+ *
+ * PUBLIC API:
+ * - usePricing: Main context hook for components that need everything
+ * - useCosts, useTiers, useFeatures, useToast: Focused hooks for specific needs
+ * - useCostCalculations: Cost calculations hook
+ * - useEscapeKey, useFocusTrap: Accessibility hooks
+ * - useDebouncedValue, useDebouncedCallback: Debounce utilities
+ *
+ * INTERNAL (exported for testing only):
+ * - useCostsState, useTiersState, useFeaturesState, useBusinessTypeState
+ *
+ * LEGACY (deprecated but kept for compatibility):
+ * - useEditableCosts
  */
 
-// Debounce utilities
-export { useDebouncedValue, useDebouncedCallback } from './useDebounce';
+// ============================================================================
+// Public Hooks
+// ============================================================================
 
-// Keyboard and accessibility hooks
-export { useEscapeKey } from './useEscapeKey';
-export { useFocusTrap } from './useFocusTrap';
-export { useUndoRedo } from './useUndoRedo';
-
-// Legacy editable costs hook
-export {
-  useEditableCosts,
-  DEFAULT_UNIT_COSTS,
-  DEFAULT_FIXED_COSTS,
-  DEFAULT_EXCHANGE_RATE,
-  type UnitCosts,
-  type FixedCosts,
-  type EditableCostsState,
-} from './useEditableCosts';
+// Re-export the main context hook for components that need everything
+export { usePricing } from '../context/PricingContext';
 
 // Focused context hooks - use these for components that only need specific functionality
 export { useCosts, type UseCostsReturn } from './useCosts';
@@ -35,7 +36,18 @@ export {
   type TierCostData,
 } from './useCostCalculations';
 
-// Internal state management hooks - used by PricingContext
+// Debounce utilities
+export { useDebouncedValue, useDebouncedCallback } from './useDebounce';
+
+// Keyboard and accessibility hooks
+export { useEscapeKey } from './useEscapeKey';
+export { useFocusTrap } from './useFocusTrap';
+export { useUndoRedo } from './useUndoRedo';
+
+// ============================================================================
+// Internal Hooks (exported for testing)
+// ============================================================================
+
 export {
   useCostsState,
   type CostsStateValue,
@@ -61,5 +73,19 @@ export {
   type BusinessTypeStateInitialValues,
 } from './useBusinessTypeState';
 
-// Re-export the main context hook for components that need everything
-export { usePricing } from '../context/PricingContext';
+// ============================================================================
+// Legacy Hooks (deprecated, kept for compatibility)
+// ============================================================================
+
+/**
+ * @deprecated Use useCosts from PricingContext instead
+ */
+export {
+  useEditableCosts,
+  DEFAULT_UNIT_COSTS,
+  DEFAULT_FIXED_COSTS,
+  DEFAULT_EXCHANGE_RATE,
+  type UnitCosts,
+  type FixedCosts,
+  type EditableCostsState,
+} from './useEditableCosts';
