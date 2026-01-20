@@ -40,6 +40,10 @@ export { TabToggle, type TabOption } from './TabToggle';
 
 // Onboarding
 export { WelcomePanel } from './WelcomePanel';
+export { QuickStartChecklist } from './QuickStartChecklist';
+
+// Modals
+export { ConfirmationModal } from './ConfirmationModal';
 
 // Validated inputs
 export { ValidatedInput, NumberInput, CurrencyInput } from './ValidatedInput';

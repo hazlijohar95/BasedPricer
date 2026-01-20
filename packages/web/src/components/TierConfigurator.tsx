@@ -27,6 +27,7 @@ export function TierConfigurator() {
     applyBusinessTypeTemplate,
     setTierCount,
     addTier,
+    showToast,
   } = usePricing();
   const { navigateTo } = useNavigation();
 
@@ -145,10 +146,15 @@ export function TierConfigurator() {
   );
 
   // Memoized export handlers
-  const handleCopyJSON = useCallback(() => {
+  const handleCopyJSON = useCallback(async () => {
     const data = JSON.stringify(tiers, null, 2);
-    navigator.clipboard.writeText(data);
-  }, [tiers]);
+    try {
+      await navigator.clipboard.writeText(data);
+      showToast('success', 'Copied to clipboard');
+    } catch (err) {
+      showToast('error', 'Failed to copy');
+    }
+  }, [tiers, showToast]);
 
   const handleExport = useCallback(() => {
     const data = JSON.stringify(tiers, null, 2);
@@ -158,15 +164,16 @@ export function TierConfigurator() {
     a.href = url;
     a.download = 'tier-config.json';
     a.click();
-  }, [tiers]);
+    showToast('success', 'Exported tier-config.json');
+  }, [tiers, showToast]);
 
   // Show empty state when no tiers exist
   if (tiers.length === 0) {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Tier Configurator</h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Configure limits, features, and highlights for each tier</p>
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Pricing Tiers</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Set up what each plan includes and how much it costs</p>
         </div>
         <div className="card">
           <EmptyState
@@ -184,8 +191,8 @@ export function TierConfigurator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Tier Configurator</h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Configure limits, features, and highlights for each tier</p>
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Pricing Tiers</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Set up what each plan includes and how much it costs</p>
         </div>
         <div className="flex gap-2">
           <button onClick={handleCopyJSON} className="btn-secondary text-xs sm:text-sm py-2 px-3 sm:py-2 sm:px-4 touch-manipulation">
@@ -401,7 +408,7 @@ export function TierConfigurator() {
                 </>
               )}
               <div className="flex justify-between py-2.5 sm:py-3 bg-gray-50 rounded-[0.2rem] px-3 sm:px-4 -mx-1 sm:-mx-2">
-                <span className="font-medium text-gray-900 text-xs sm:text-sm">Total Variable COGS</span>
+                <span className="font-medium text-gray-900 text-xs sm:text-sm">Total Variable Cost</span>
                 <span className="font-semibold text-[#253ff6] text-xs sm:text-sm">MYR {costs.total.toFixed(2)}</span>
               </div>
 

@@ -682,6 +682,8 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       setState(history[newIndex]);
+      // Show toast feedback
+      setToasts(prev => [...prev, { id: `undo-${Date.now()}`, type: 'info', message: 'Undone', duration: 1500 }]);
     }
   }, [history, historyIndex]);
 
@@ -692,6 +694,8 @@ export function PricingProvider({ children }: { children: ReactNode }) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       setState(history[newIndex]);
+      // Show toast feedback
+      setToasts(prev => [...prev, { id: `redo-${Date.now()}`, type: 'info', message: 'Redone', duration: 1500 }]);
     }
   }, [history, historyIndex]);
 

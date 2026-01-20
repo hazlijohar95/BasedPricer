@@ -18,13 +18,13 @@ import { generateId } from '@basedpricer/core';
 import { featureCategories, type FeatureCategory, type Feature } from '../data/features';
 import { usePricing, type VariableCostItem } from '../context/PricingContext';
 import { useDebouncedValue } from '../hooks/useDebounce';
-import { SourceBadge } from './shared';
+import { SourceBadge, ConfirmationModal } from './shared';
 import { FeatureStatsGrid } from './features';
 
 type SourceFilter = 'all' | 'codebase' | 'manual';
 
 export function FeatureInventory() {
-  const { features, addFeature, updateFeature, removeFeature, variableCosts } = usePricing();
+  const { features, addFeature, updateFeature, removeFeature, variableCosts, showToast } = usePricing();
 
   const [selectedCategory, setSelectedCategory] = useState<FeatureCategory | 'all'>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -34,6 +34,7 @@ export function FeatureInventory() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
+  const [featureToDelete, setFeatureToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -99,18 +100,29 @@ export function FeatureInventory() {
   };
 
   const handleDeleteFeature = (featureId: string) => {
-    if (confirm('Are you sure you want to delete this feature?')) {
-      removeFeature(featureId);
+    setFeatureToDelete(featureId);
+  };
+
+  const confirmDeleteFeature = () => {
+    if (featureToDelete) {
+      const deletedName = features.find(f => f.id === featureToDelete)?.name ?? 'Feature';
+      removeFeature(featureToDelete);
+      setFeatureToDelete(null);
+      showToast('info', `Deleted "${deletedName}"`);
     }
   };
+
+  const featureToDeleteName = featureToDelete
+    ? features.find(f => f.id === featureToDelete)?.name ?? 'this feature'
+    : '';
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Feature Inventory</h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Manage features from your codebase and add planned features</p>
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Features</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">What does your product do? List everything here.</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -277,7 +289,26 @@ export function FeatureInventory() {
           {Object.keys(groupedFeatures).length === 0 && (
             <div className="text-center py-10 sm:py-12 text-gray-400">
               <Lightning size={40} weight="duotone" className="mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No features match your filters</p>
+              <p className="text-sm mb-2">No features match your filters</p>
+              <p className="text-xs text-gray-400 mb-3">Try adjusting your search or filters</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs text-[#253ff6] hover:text-[#1a2eb8]"
+                  >
+                    Clear search
+                  </button>
+                )}
+                {(sourceFilter !== 'all' || selectedCategory !== 'all') && (
+                  <button
+                    onClick={() => { setSourceFilter('all'); setSelectedCategory('all'); }}
+                    className="text-xs text-[#253ff6] hover:text-[#1a2eb8]"
+                  >
+                    Reset filters
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -366,6 +397,17 @@ export function FeatureInventory() {
           onSave={(updates) => handleEditFeature(updates)}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={featureToDelete !== null}
+        onClose={() => setFeatureToDelete(null)}
+        onConfirm={confirmDeleteFeature}
+        title="Delete Feature"
+        message={`Are you sure you want to delete "${featureToDeleteName}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        type="danger"
+      />
     </div>
   );
 }
@@ -619,7 +661,7 @@ function FeatureModal({
               className="input-field w-full py-2.5 sm:py-2"
             >
               <option value="">No cost driver</option>
-              <optgroup label="Variable Costs (from COGS)">
+              <optgroup label="Variable Costs">
                 {variableCosts.map(cost => (
                   <option key={cost.id} value={cost.id}>
                     {cost.name} - MYR {cost.costPerUnit.toFixed(3)}/{cost.unit}
@@ -639,7 +681,7 @@ function FeatureModal({
               </div>
             )}
             <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
-              Link this feature to a variable cost from the COGS calculator
+              Link this feature to a variable cost from the Cost Calculator
             </p>
           </div>
 

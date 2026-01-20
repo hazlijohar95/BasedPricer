@@ -67,12 +67,12 @@ const navSections: NavSection[] = [
   {
     title: 'Tools',
     items: [
-      { id: 'codebase-analyzer', label: 'Codebase Analyzer', icon: GithubLogo },
-      { id: 'feature-inventory', label: 'Feature Inventory', icon: Package },
-      { id: 'cogs-calculator', label: 'COGS Calculator', icon: CurrencyDollar },
-      { id: 'tier-configurator', label: 'Tier Configurator', icon: Stack },
-      { id: 'pricing-calculator', label: 'Pricing Calculator', icon: Calculator },
-      { id: 'pricing-mockup', label: 'Pricing Mockup', icon: Browser },
+      { id: 'codebase-analyzer', label: 'GitHub Import', icon: GithubLogo },
+      { id: 'feature-inventory', label: 'Features', icon: Package },
+      { id: 'cogs-calculator', label: 'Cost Calculator', icon: CurrencyDollar },
+      { id: 'tier-configurator', label: 'Pricing Tiers', icon: Stack },
+      { id: 'pricing-calculator', label: 'Pricing Simulator', icon: Calculator },
+      { id: 'pricing-mockup', label: 'Pricing Preview', icon: Browser },
     ],
   },
   {
@@ -1086,8 +1086,8 @@ const StepIndicator = memo(function StepIndicator({ number, title, children }: {
 
 const toolPages: Record<string, { title: string; description: string; content: React.ReactNode }> = {
   'codebase-analyzer': {
-    title: 'Codebase Analyzer',
-    description: 'The Codebase Analyzer connects to your GitHub repository and uses AI to automatically discover all the features in your product. Instead of manually listing every feature, let AI do the heavy lifting.',
+    title: 'GitHub Import',
+    description: 'Connect your GitHub repository and let AI discover what your product does. Instead of listing every feature by hand, let AI do the heavy lifting.',
     content: (
       <div className="space-y-8">
         {/* What it does - plain English */}
@@ -1162,14 +1162,14 @@ const toolPages: Record<string, { title: string; description: string; content: R
         </section>
 
         <Callout type="tip" title="Don't have a GitHub repo?">
-          No problem! You can skip this tool entirely and add features manually in the Feature Inventory.
+          No problem! You can skip this tool entirely and add features manually in the Features tab.
         </Callout>
       </div>
     ),
   },
   'feature-inventory': {
-    title: 'Feature Inventory',
-    description: 'The Feature Inventory is your master list of everything your product does. This is where you organize, categorize, and prepare features for tier assignment.',
+    title: 'Features',
+    description: 'Your master list of everything your product does. Organize, categorize, and prepare your features before assigning them to pricing tiers.',
     content: (
       <div className="space-y-8">
         {/* What it does */}
@@ -1226,8 +1226,8 @@ const toolPages: Record<string, { title: string; description: string; content: R
     ),
   },
   'cogs-calculator': {
-    title: 'COGS Calculator',
-    description: 'COGS (Cost of Goods Sold) Calculator helps you figure out exactly how much it costs to serve each customer. This is the foundation of profitable pricing.',
+    title: 'Cost Calculator',
+    description: 'Figure out exactly how much it costs to serve each customer. Know your numbers before setting your prices.',
     content: (
       <div className="space-y-8">
         {/* Plain English explanation */}
@@ -1335,8 +1335,8 @@ const toolPages: Record<string, { title: string; description: string; content: R
     ),
   },
   'tier-configurator': {
-    title: 'Tier Configurator',
-    description: 'The Tier Configurator is where you create your pricing tiers (like Free, Pro, Enterprise) and decide which features go in each tier.',
+    title: 'Pricing Tiers',
+    description: 'Set up your pricing tiers (Free, Pro, Enterprise) and decide what features each plan includes.',
     content: (
       <div className="space-y-8">
         {/* What it does */}
@@ -1406,8 +1406,8 @@ const toolPages: Record<string, { title: string; description: string; content: R
     ),
   },
   'pricing-calculator': {
-    title: 'Pricing Calculator',
-    description: 'The Pricing Calculator shows you the financial impact of your pricing decisions in real-time. See margins, revenue projections, and profitability at a glance.',
+    title: 'Pricing Simulator',
+    description: 'Play with the numbers and see what happens. Adjust prices, customer counts, and tier mix to find your sweet spot.',
     content: (
       <div className="space-y-8">
         {/* What it does */}
@@ -1467,8 +1467,8 @@ const toolPages: Record<string, { title: string; description: string; content: R
     ),
   },
   'pricing-mockup': {
-    title: 'Pricing Mockup',
-    description: 'The Pricing Mockup shows you exactly how your pricing page will look to customers. Preview different layouts, toggle annual pricing, and see your tiers side by side.',
+    title: 'Pricing Preview',
+    description: 'See exactly how your pricing page will look to customers. Preview layouts, toggle annual pricing, and make sure everything looks right before building.',
     content: (
       <div className="space-y-8">
         {/* What it does */}

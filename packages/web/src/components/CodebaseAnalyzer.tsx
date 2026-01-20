@@ -423,10 +423,10 @@ export function CodebaseAnalyzer() {
       <div>
         <p className="text-xs sm:text-[13px] text-gray-400 mb-1">Analyze</p>
         <h1 className="text-xl sm:text-[28px] font-light text-gray-900 tracking-tight">
-          Codebase Analyzer
+          GitHub Import
         </h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-2">
-          Import your GitHub repository to automatically detect tech stack, features, and cost drivers.
+          Paste a repo URL and let AI figure out what your product does. It'll detect features, tech stack, and estimated costs.
         </p>
       </div>
 

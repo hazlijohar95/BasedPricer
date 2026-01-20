@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Folder, CaretDown, Plus, Trash, Check, FloppyDisk, PencilSimple } from '@phosphor-icons/react';
 import { usePricing } from '../../context/PricingContext';
+import { ConfirmationModal } from './ConfirmationModal';
 
 export function ProjectManager() {
   const {
@@ -22,6 +23,7 @@ export function ProjectManager() {
   const [editName, setEditName] = useState(currentProjectName);
   const [showSaveNew, setShowSaveNew] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,8 +76,13 @@ export function ProjectManager() {
 
   const handleDeleteProject = (name: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`Delete project "${name}"?`)) {
-      deleteProject(name);
+    setProjectToDelete(name);
+  };
+
+  const confirmDeleteProject = () => {
+    if (projectToDelete) {
+      deleteProject(projectToDelete);
+      setProjectToDelete(null);
     }
   };
 
@@ -213,6 +220,17 @@ export function ProjectManager() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={projectToDelete !== null}
+        onClose={() => setProjectToDelete(null)}
+        onConfirm={confirmDeleteProject}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${projectToDelete}"? All data in this project will be lost.`}
+        confirmLabel="Delete"
+        type="danger"
+      />
     </div>
   );
 }

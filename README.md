@@ -32,10 +32,10 @@ Open **[localhost:5173](http://localhost:5173)**
 
 | | Feature | What You Get |
 |:---:|---------|--------------|
-| 🔍 | **Codebase Analyzer** | Import GitHub repos → AI detects features & cost drivers |
-| 📊 | **COGS Calculator** | Variable + fixed costs → margin analysis |
-| 🎛️ | **Tier Designer** | Configure pricing tiers with feature limits |
-| 🎨 | **Pricing Mockup** | Preview your pricing page live |
+| 🔍 | **GitHub Import** | Connect your repo → AI discovers features & cost drivers |
+| 📊 | **Cost Calculator** | Variable + fixed costs → margin analysis |
+| 🎛️ | **Pricing Tiers** | Set up what each plan includes and costs |
+| 🎨 | **Pricing Preview** | See your pricing page before you build it |
 | 📝 | **Report Generator** | Export for accountants, investors, engineers |
 
 ---

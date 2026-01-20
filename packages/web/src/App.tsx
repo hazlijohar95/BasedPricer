@@ -16,10 +16,11 @@ import {
   Eye,
   Link,
   BookOpen,
+  CloudCheck,
 } from '@phosphor-icons/react';
 import { PricingProvider, usePricing } from './context/PricingContext';
 import { NavigationProvider, useNavigation, type Tab } from './context/NavigationContext';
-import { ToastContainer, WelcomePanel, ProjectManager } from './components/shared';
+import { ToastContainer, WelcomePanel, ProjectManager, QuickStartChecklist } from './components/shared';
 import { Logo } from './components/brand';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SkeletonPage } from './components/shared/Skeleton';
@@ -51,10 +52,10 @@ const tabs: { id: Tab; label: string; icon: typeof House }[] = [
   { id: 'overview', label: 'Overview', icon: House },
   { id: 'analyze', label: 'Analyze', icon: GithubLogo },
   { id: 'features', label: 'Features', icon: Package },
-  { id: 'cogs', label: 'COGS', icon: CurrencyDollar },
+  { id: 'cogs', label: 'Costs', icon: CurrencyDollar },
   { id: 'tiers', label: 'Tiers', icon: Stack },
-  { id: 'pricing', label: 'Calculator', icon: Calculator },
-  { id: 'mockup', label: 'Mockup', icon: Browser },
+  { id: 'pricing', label: 'Simulate', icon: Calculator },
+  { id: 'mockup', label: 'Preview', icon: Browser },
 ];
 
 function MainApp() {
@@ -234,8 +235,9 @@ function MainApp() {
                 <ArrowClockwise size={16} aria-hidden="true" />
               </button>
             </div>
-            <div className="text-xs text-gray-500">
-              <span>Auto-saved to browser</span>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+              <CloudCheck size={14} weight="duotone" />
+              <span>Saved</span>
             </div>
           </div>
         </div>
@@ -414,11 +416,46 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
         </div>
       )}
 
+      {/* Quick Start Checklist */}
+      <QuickStartChecklist
+        items={[
+          {
+            id: 'features',
+            label: 'Add your features',
+            description: 'Define what your product offers - either import from GitHub or add manually',
+            isComplete: features.length > 0,
+            action: () => onNavigate('features'),
+          },
+          {
+            id: 'costs',
+            label: 'Set up your costs',
+            description: 'Add variable costs (per customer) and fixed costs (monthly overhead)',
+            isComplete: variableCosts.length > 0 || fixedCosts.length > 0,
+            action: () => onNavigate('cogs'),
+          },
+          {
+            id: 'tiers',
+            label: 'Configure pricing tiers',
+            description: 'Set prices and assign features to each tier',
+            isComplete: tiers.some(t => t.monthlyPriceMYR > 0),
+            action: () => onNavigate('tiers'),
+          },
+          {
+            id: 'calculator',
+            label: 'Model your revenue',
+            description: 'See projected revenue, margins, and unit economics',
+            isComplete: grossMargin > 0,
+            action: () => onNavigate('pricing'),
+          },
+        ]}
+        onDismiss={() => {}}
+      />
+
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="card p-4 sm:p-5 border-l-[3px] border-l-blue-500">
           <div className="flex items-center justify-between">
-            <p className="text-xs sm:text-sm text-gray-500">Target Price</p>
+            <p className="text-xs sm:text-sm text-gray-500">Starting Price</p>
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand-subtle flex items-center justify-center">
               <TrendUp size={14} className="sm:hidden text-brand-primary" weight="duotone" />
               <TrendUp size={16} className="hidden sm:block text-brand-primary" weight="duotone" />
@@ -453,12 +490,12 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
           }`}>
             {grossMargin.toFixed(0)}%
           </p>
-          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">At target price</p>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">At starting price</p>
         </div>
 
         <div className="card p-4 sm:p-5 border-l-[3px] border-l-violet-500">
           <div className="flex items-center justify-between">
-            <p className="text-xs sm:text-sm text-gray-500">Est. COGS</p>
+            <p className="text-xs sm:text-sm text-gray-500">Cost/Customer</p>
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-violet-50 flex items-center justify-center">
               <ChartLine size={14} className="sm:hidden text-violet-600" weight="duotone" />
               <ChartLine size={16} className="hidden sm:block text-violet-600" weight="duotone" />
@@ -496,7 +533,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
             {[
               { id: 'analyze' as Tab, label: 'Codebase Analyzer', sub: 'Import features from GitHub', icon: GithubLogo, borderColor: 'border-l-gray-400' },
               { id: 'features' as Tab, label: 'Feature Inventory', sub: 'Browse and categorize features', icon: Package, borderColor: 'border-l-blue-500' },
-              { id: 'cogs' as Tab, label: 'COGS Calculator', sub: 'Analyze variable and fixed costs', icon: CurrencyDollar, borderColor: 'border-l-emerald-500' },
+              { id: 'cogs' as Tab, label: 'Cost Calculator', sub: 'Build your cost model', icon: CurrencyDollar, borderColor: 'border-l-emerald-500' },
               { id: 'tiers' as Tab, label: 'Tier Configurator', sub: 'Set limits and feature access', icon: Stack, borderColor: 'border-l-violet-500' },
               { id: 'pricing' as Tab, label: 'Pricing Calculator', sub: 'Model revenue and unit economics', icon: Calculator, borderColor: 'border-l-amber-500' },
             ].map((item) => {
@@ -554,9 +591,9 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${tier.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                     <span className="text-sm font-medium text-gray-900 truncate">{tier.name}</span>
-                    {tier.id === 'basic' && (
+                    {tier.monthlyPriceMYR > 0 && tiers.filter(t => t.monthlyPriceMYR > 0 && t.status === 'active')[0]?.id === tier.id && (
                       <span className="text-[10px] bg-brand-subtle text-brand-primary px-1.5 py-0.5 rounded font-medium flex-shrink-0">
-                        Target
+                        Entry
                       </span>
                     )}
                   </div>

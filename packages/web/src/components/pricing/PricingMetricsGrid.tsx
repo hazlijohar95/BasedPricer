@@ -52,7 +52,7 @@ export function PricingMetricsGrid({
         <p className={`text-2xl font-semibold mt-2 ${getGrossMarginTextColor(grossMargin)}`}>
           {grossMargin.toFixed(0)}%
         </p>
-        <p className="text-xs text-gray-400 mt-1">Revenue − Variable Costs</p>
+        <p className="text-xs text-gray-400 mt-1">What you keep after direct costs</p>
       </div>
 
       {/* Operating Margin */}

@@ -32,7 +32,7 @@ type StakeholderKey = 'accountant' | 'investor' | 'engineer' | 'marketer';
 type UrlMode = 'short' | 'portable';
 
 const stakeholders: { key: StakeholderKey; label: string; icon: typeof FileText; description: string }[] = [
-  { key: 'accountant', label: 'Accountant', icon: FileText, description: 'COGS, margins, P&L projections' },
+  { key: 'accountant', label: 'Accountant', icon: FileText, description: 'Costs, margins, P&L projections' },
   { key: 'investor', label: 'Investor', icon: ChartLine, description: 'Valuations, milestones, metrics' },
   { key: 'engineer', label: 'Engineer', icon: Code, description: 'Features, limits, implementation' },
   { key: 'marketer', label: 'Marketer', icon: Megaphone, description: 'Positioning, highlights, CTAs' },

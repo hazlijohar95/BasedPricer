@@ -17,24 +17,24 @@ const config: Record<EmptyStateType, {
 }> = {
   tiers: {
     icon: Stack,
-    title: 'No pricing tiers configured',
-    description: 'Create pricing tiers to define your product offerings. Start by analyzing a codebase or add tiers manually.',
-    analyzeLabel: 'Analyze Codebase',
-    manualLabel: 'Add Tier',
+    title: 'No pricing tiers yet',
+    description: 'Time to decide how you\'ll package your product. Free tier? Pro tier? Enterprise? Let\'s figure it out.',
+    analyzeLabel: 'Import from GitHub',
+    manualLabel: 'Create a Tier',
   },
   features: {
     icon: Package,
-    title: 'No features defined',
-    description: 'Features are the building blocks of your pricing tiers. Import them from a codebase or define them manually.',
-    analyzeLabel: 'Analyze Codebase',
-    manualLabel: 'Add Feature',
+    title: 'No features yet',
+    description: 'What can your product do? List your features here, then decide which ones go in which pricing tier.',
+    analyzeLabel: 'Import from GitHub',
+    manualLabel: 'Add a Feature',
   },
   costs: {
     icon: CurrencyDollar,
-    title: 'No cost data available',
-    description: 'Add your variable and fixed costs to calculate accurate pricing. Import from a codebase or enter them manually.',
-    analyzeLabel: 'Analyze Codebase',
-    manualLabel: 'Add Cost',
+    title: 'No costs added yet',
+    description: 'How much does it cost you to serve each customer? Add your costs here so you can price profitably.',
+    analyzeLabel: 'Import from GitHub',
+    manualLabel: 'Add a Cost',
   },
 };
 

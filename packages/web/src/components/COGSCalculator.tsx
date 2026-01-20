@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Info, Plus, X, PencilSimple, Gauge } from '@phosphor-icons/react';
+import { Info, Plus, X, PencilSimple, Gauge, Warning, Lightbulb } from '@phosphor-icons/react';
 import { generateId } from '@basedpricer/core';
 import { usePricing, type VariableCostItem, type FixedCostItem } from '../context/PricingContext';
 import { COST_PRESETS, type CostPresetKey } from '../data/cost-presets';
@@ -86,19 +86,19 @@ export function COGSCalculator() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">COGS Calculator</h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Build your cost model to find the right price</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Cost Calculator</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Know your numbers. Price with confidence.</p>
         </div>
       </div>
 
-      {/* What is COGS + Presets */}
+      {/* What are costs + Presets */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
         <div className="flex items-start gap-2 sm:gap-3">
           <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0 hidden sm:block" />
           <div className="flex-1">
-            <p className="text-sm text-blue-900 font-medium mb-1">What goes into COGS?</p>
+            <p className="text-sm text-blue-900 font-medium mb-1">What costs should you include?</p>
             <p className="text-xs text-blue-700 mb-3 leading-relaxed">
-              COGS = costs that scale with customers. Include: <strong>Variable costs</strong> (API calls, storage) + <strong>Fixed costs</strong> (shared infrastructure).
+              <strong>Variable costs</strong> scale with usage (API calls, storage, emails). <strong>Fixed costs</strong> stay constant (servers, tools). Together they determine your cost per customer.
             </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <span className="text-xs text-blue-600 font-medium">Load template:</span>
@@ -162,6 +162,10 @@ export function COGSCalculator() {
               step="0.05"
               value={utilizationRate}
               onChange={(e) => setUtilizationRate(Number(e.target.value))}
+              aria-label="Usage rate percentage"
+              aria-valuemin={10}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(utilizationRate * 100)}
               className="flex-1 sm:w-24 accent-[#253ff6]"
             />
             <span className="text-sm font-mono text-gray-600 w-10">{(utilizationRate * 100).toFixed(0)}%</span>
@@ -241,6 +245,20 @@ export function COGSCalculator() {
         </div>
       </div>
 
+      {/* Cost Warning - when costs exceed price */}
+      {displayCosts.totalCOGS > selectedPrice && selectedPrice > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-3">
+          <Warning size={20} weight="duotone" className="text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Cost exceeds price</p>
+            <p className="text-xs text-red-600 mt-1">
+              Your cost per customer (MYR {displayCosts.totalCOGS.toFixed(2)}) is higher than your selected price point (MYR {selectedPrice}).
+              Consider reducing costs or increasing your price to maintain profitability.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Editable Costs */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Variable Costs */}
@@ -270,6 +288,19 @@ export function COGSCalculator() {
               <div className="col-span-1"></div>
             </div>
 
+            {variableCosts.length === 0 && (
+              <div className="text-center py-6 sm:py-8">
+                <Lightbulb size={32} weight="duotone" className="mx-auto text-gray-300 mb-3" />
+                <p className="text-sm text-gray-500 mb-1">No variable costs yet</p>
+                <p className="text-xs text-gray-400 mb-3">Add costs that scale with usage (API calls, storage, etc.)</p>
+                <button
+                  onClick={addVariableCost}
+                  className="text-xs text-[#253ff6] hover:text-[#1a2eb8] font-medium"
+                >
+                  + Add your first variable cost
+                </button>
+              </div>
+            )}
             {variableCosts.map((item) => (
               <div key={item.id} className="group">
                 {/* Mobile Card Layout */}
@@ -293,8 +324,9 @@ export function COGSCalculator() {
                       <label className="text-[10px] text-gray-500 uppercase">Usage</label>
                       <input
                         type="number"
+                        min="0"
                         value={item.usagePerCustomer}
-                        onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Number(e.target.value))}
+                        onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Math.max(0, Number(e.target.value)))}
                         className="w-full text-sm bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                       />
                     </div>
@@ -311,9 +343,10 @@ export function COGSCalculator() {
                       <label className="text-[10px] text-gray-500 uppercase">Cost</label>
                       <input
                         type="number"
+                        min="0"
                         step="0.001"
                         value={item.costPerUnit}
-                        onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Number(e.target.value))}
+                        onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Math.max(0, Number(e.target.value)))}
                         className="w-full text-sm font-mono bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                       />
                     </div>
@@ -350,8 +383,9 @@ export function COGSCalculator() {
                   <div className="col-span-2">
                     <input
                       type="number"
+                      min="0"
                       value={item.usagePerCustomer}
-                      onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Number(e.target.value))}
+                      onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Math.max(0, Number(e.target.value)))}
                       className="w-full text-sm text-right bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                     />
                   </div>
@@ -366,9 +400,10 @@ export function COGSCalculator() {
                   <div className="col-span-2">
                     <input
                       type="number"
+                      min="0"
                       step="0.001"
                       value={item.costPerUnit}
-                      onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Number(e.target.value))}
+                      onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Math.max(0, Number(e.target.value)))}
                       className="w-full text-sm text-right font-mono bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                     />
                   </div>
@@ -419,6 +454,17 @@ export function COGSCalculator() {
             </div>
 
             <div className="space-y-2">
+              {fixedCosts.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-xs text-gray-400 mb-2">No fixed costs added</p>
+                  <button
+                    onClick={addFixedCost}
+                    className="text-xs text-[#253ff6] hover:text-[#1a2eb8] font-medium"
+                  >
+                    + Add fixed cost
+                  </button>
+                </div>
+              )}
               {fixedCosts.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-2 px-2 bg-gray-50 rounded-lg group">
                   <input
@@ -430,8 +476,9 @@ export function COGSCalculator() {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
+                      min="0"
                       value={item.monthlyCost}
-                      onChange={(e) => updateFixedCost(item.id, 'monthlyCost', Number(e.target.value))}
+                      onChange={(e) => updateFixedCost(item.id, 'monthlyCost', Math.max(0, Number(e.target.value)))}
                       className="w-20 sm:w-16 text-xs sm:text-sm text-right font-mono bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                     />
                     <button
@@ -463,6 +510,10 @@ export function COGSCalculator() {
                 step="10"
                 value={customerCount}
                 onChange={(e) => setCustomerCount(Number(e.target.value))}
+                aria-label="Number of customers"
+                aria-valuemin={10}
+                aria-valuemax={1000}
+                aria-valuenow={customerCount}
                 className="w-full h-2 bg-gray-100 rounded-full appearance-none cursor-pointer accent-[#253ff6] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#253ff6] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
               />
               <p className="text-[10px] text-gray-500 mt-1.5">Fixed ÷ customers = MYR {costs.fixedPerCustomer.toFixed(2)}/ea</p>
@@ -504,9 +555,9 @@ export function COGSCalculator() {
       {/* Formula */}
       <div className="mt-4 sm:mt-5 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
         <div className="text-xs text-gray-500">
-          <span className="font-medium text-gray-700">Formula:</span>{' '}
+          <span className="font-medium text-gray-700">How it's calculated:</span>{' '}
           <span className="font-mono text-[11px] sm:text-xs break-words">
-            COGS = Σ(usage × cost{showRealisticUsage ? ` × ${(utilizationRate * 100).toFixed(0)}%` : ''}) + (fixed ÷ customers)
+            Cost/Customer = Variable costs{showRealisticUsage ? ` × ${(utilizationRate * 100).toFixed(0)}%` : ''} + (Fixed costs ÷ customers)
           </span>
         </div>
         <div className="text-xs text-gray-500 mt-1.5 sm:mt-1">

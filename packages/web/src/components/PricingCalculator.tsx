@@ -265,8 +265,8 @@ export function PricingCalculator() {
       {/* Header with Scenario Selector */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Pricing Calculator</h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-1">Model revenue, costs, and unit economics under different scenarios</p>
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Pricing Simulator</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-1">Play with the numbers and see what happens to your revenue</p>
         </div>
         <ScenarioSelector
           scenarios={scenarios}
@@ -294,7 +294,7 @@ export function PricingCalculator() {
               const isFromData = tierDef && tierDef.monthlyPriceMYR > 0;
               return (
                 <div key={tier} className="flex items-center gap-2 sm:gap-4">
-                  <label className="w-20 sm:w-24 text-xs sm:text-sm font-medium text-gray-700 capitalize">{tier}</label>
+                  <label className="w-20 sm:w-24 text-xs sm:text-sm font-medium text-gray-700 capitalize">{tier === 'freemium' ? 'Free' : tier}</label>
                   <input
                     type="number"
                     min="0"
@@ -303,9 +303,9 @@ export function PricingCalculator() {
                     disabled={tier === 'freemium'}
                     className={`input-field flex-1 text-sm touch-manipulation ${tier === 'freemium' ? 'bg-gray-100 text-gray-400' : ''}`}
                   />
-                  {tier === 'basic' && <span className="text-xs text-[#253ff6] font-medium hidden sm:inline">Target</span>}
+                  {tier === 'basic' && <span className="text-xs text-[#253ff6] font-medium hidden sm:inline">Entry</span>}
                   {!isFromData && tier !== 'freemium' && (
-                    <span className="text-xs text-amber-600 hidden sm:inline">TBD</span>
+                    <span className="text-xs text-amber-600 hidden sm:inline">Set price</span>
                   )}
                 </div>
               );
@@ -334,13 +334,17 @@ export function PricingCalculator() {
           <div className="space-y-3 sm:space-y-4">
             {(['freemium', 'basic', 'pro', 'enterprise'] as const).map((tier) => (
               <div key={tier} className="flex items-center gap-2 sm:gap-4">
-                <label className="w-20 sm:w-24 text-xs sm:text-sm font-medium text-gray-700 capitalize">{tier}</label>
+                <label className="w-20 sm:w-24 text-xs sm:text-sm font-medium text-gray-700 capitalize">{tier === 'freemium' ? 'Free' : tier}</label>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={scenario.distribution[tier]}
                   onChange={(e) => handleDistributionChange(tier, Number(e.target.value))}
+                  aria-label={`${tier} tier distribution percentage`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(normalizedDistribution[tier])}
                   className="flex-1 accent-[#253ff6] touch-manipulation h-2 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5"
                 />
                 <span className="w-16 sm:w-24 text-right text-xs sm:text-sm font-mono text-gray-600">
@@ -357,9 +361,10 @@ export function PricingCalculator() {
         <h3 className="font-medium text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Assumptions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div>
-            <label className="text-xs sm:text-sm text-gray-600 flex items-center gap-2">
+            <label className="text-xs sm:text-sm text-gray-600 flex items-center gap-2" title="Average percentage of plan limits that customers actually use. Lower usage = lower variable costs.">
               <Gauge size={16} weight="duotone" className="text-gray-400" />
-              Utilization Rate
+              Typical Usage
+              <span className="text-gray-400 cursor-help" title="Most SaaS customers use 30-70% of their plan limits">ⓘ</span>
             </label>
             <div className="flex items-center gap-2 sm:gap-3 mt-2">
               <input
@@ -369,11 +374,15 @@ export function PricingCalculator() {
                 step="0.05"
                 value={utilizationRate}
                 onChange={(e) => setUtilizationRate(Number(e.target.value))}
+                aria-label="Typical customer usage percentage"
+                aria-valuemin={10}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(utilizationRate * 100)}
                 className="flex-1 accent-[#253ff6] touch-manipulation h-2 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5"
               />
               <span className="w-10 sm:w-12 text-xs sm:text-sm font-mono text-gray-700">{(utilizationRate * 100).toFixed(0)}%</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1 hidden sm:block">How much of limits customers actually use</p>
+            <p className="text-xs text-gray-500 mt-1 hidden sm:block">How much of their limits customers typically use (most SaaS: 30-70%)</p>
           </div>
           <div>
             <label className="text-xs sm:text-sm text-gray-600">Monthly Churn Rate</label>

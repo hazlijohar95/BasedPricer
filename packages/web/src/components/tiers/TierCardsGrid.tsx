@@ -3,6 +3,7 @@
  * Displays a grid of tier cards with cost and margin information
  */
 
+import { CheckCircle, Warning, XCircle } from '@phosphor-icons/react';
 import type { Tier } from '../../data/tiers';
 import { MARGIN_THRESHOLDS } from '../../constants';
 
@@ -16,6 +17,20 @@ interface TierCardsGridProps {
   allTierCosts: Map<string, TierCostData>;
   selectedTierId: string;
   onSelect: (tierId: string) => void;
+}
+
+// Helper to get margin health info
+function getMarginHealth(margin: number, hasPrice: boolean) {
+  if (!hasPrice) {
+    return { status: 'none', label: 'Set price', color: 'gray', bg: 'bg-gray-50', text: 'text-gray-400', icon: null };
+  }
+  if (margin >= MARGIN_THRESHOLDS.HEALTHY) {
+    return { status: 'healthy', label: 'Healthy', color: 'emerald', bg: 'bg-emerald-50', text: 'text-emerald-600', icon: CheckCircle };
+  }
+  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) {
+    return { status: 'ok', label: 'OK', color: 'amber', bg: 'bg-amber-50', text: 'text-amber-600', icon: Warning };
+  }
+  return { status: 'low', label: 'Low', color: 'red', bg: 'bg-red-50', text: 'text-red-600', icon: XCircle };
 }
 
 export function TierCardsGrid({
@@ -36,6 +51,9 @@ export function TierCardsGrid({
         const tierCostsTotal = tierData?.total ?? 0;
         const tierMargin = tierData?.margin ?? 0;
         const isSelected = selectedTierId === tier.id;
+        const hasPrice = tier.monthlyPriceMYR > 0;
+        const marginHealth = getMarginHealth(tierMargin, hasPrice);
+        const MarginIcon = marginHealth.icon;
 
         return (
           <button
@@ -66,21 +84,26 @@ export function TierCardsGrid({
               )}
             </p>
 
+            {/* Margin Health Indicator */}
+            {tier.id !== 'freemium' && (
+              <div className={`mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded-[0.2rem] ${marginHealth.bg}`}>
+                {MarginIcon && <MarginIcon size={14} weight="fill" className={marginHealth.text} />}
+                <span className={`text-xs font-medium ${marginHealth.text}`}>
+                  {hasPrice ? `${tierMargin.toFixed(0)}% margin` : 'Set price'}
+                </span>
+                {hasPrice && (
+                  <span className={`text-xs ${marginHealth.text} opacity-70`}>
+                    • {marginHealth.label}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="mt-4 pt-4 border-t border-[#e4e4e4] space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-500">COGS</span>
+                <span className="text-gray-500">Cost</span>
                 <span className="font-medium text-gray-700">MYR {tierCostsTotal.toFixed(2)}</span>
               </div>
-              {tier.monthlyPriceMYR > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-500">Margin</span>
-                  <span className={`font-medium ${
-                    tierMargin >= MARGIN_THRESHOLDS.HEALTHY ? 'text-emerald-600' : tierMargin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'text-amber-600' : 'text-red-600'
-                  }`}>
-                    {tierMargin.toFixed(0)}%
-                  </span>
-                </div>
-              )}
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500">Features</span>
                 <span className="font-medium text-gray-700">{tier.includedFeatures.length}</span>

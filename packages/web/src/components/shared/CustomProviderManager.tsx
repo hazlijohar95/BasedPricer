@@ -17,6 +17,7 @@ import {
   type ProviderConfig,
   type ModelConfig,
 } from '../../services/config-loader';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface CustomProviderManagerProps {
   onProviderAdded?: (provider: ProviderConfig) => void;
@@ -31,6 +32,7 @@ export function CustomProviderManager({
   const [customProviders, setCustomProviders] = useState<ProviderConfig[]>(() => getCustomProviders());
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [providerToRemove, setProviderToRemove] = useState<string | null>(null);
 
   const handleSave = (provider: ProviderConfig) => {
     const result = saveCustomProvider(provider);
@@ -45,12 +47,21 @@ export function CustomProviderManager({
   };
 
   const handleRemove = (providerId: string) => {
-    if (confirm('Remove this custom provider? Your API key for it will also be removed.')) {
-      removeCustomProvider(providerId);
+    setProviderToRemove(providerId);
+  };
+
+  const confirmRemoveProvider = () => {
+    if (providerToRemove) {
+      removeCustomProvider(providerToRemove);
       setCustomProviders(getCustomProviders());
-      onProviderRemoved?.(providerId);
+      onProviderRemoved?.(providerToRemove);
+      setProviderToRemove(null);
     }
   };
+
+  const providerToRemoveName = providerToRemove
+    ? customProviders.find(p => p.id === providerToRemove)?.name ?? 'this provider'
+    : '';
 
   return (
     <div className="space-y-4">
@@ -150,6 +161,17 @@ export function CustomProviderManager({
           Popular compatible providers: Ollama, vLLM, LM Studio, LocalAI, Together AI, Groq, Fireworks AI
         </p>
       </div>
+
+      {/* Remove Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={providerToRemove !== null}
+        onClose={() => setProviderToRemove(null)}
+        onConfirm={confirmRemoveProvider}
+        title="Remove Provider"
+        message={`Remove "${providerToRemoveName}"? Your API key for this provider will also be removed.`}
+        confirmLabel="Remove"
+        type="danger"
+      />
     </div>
   );
 }
