@@ -4,7 +4,13 @@
  */
 
 import type { ValuationProjection, MilestoneTarget, InvestorMetrics } from '../types';
-import { MARGIN_THRESHOLDS } from '../data';
+import {
+  VALUATION_MULTIPLES,
+  LTV_CAC_THRESHOLDS,
+  PAYBACK_PERIOD_THRESHOLDS,
+  MONTHS_PER_YEAR,
+} from '../data';
+import { getGrossMarginHealth } from './margin';
 
 // ============================================================================
 // Valuation Calculations
@@ -17,9 +23,9 @@ import { MARGIN_THRESHOLDS } from '../data';
 export function calculateValuation(arr: number): ValuationProjection {
   return {
     currentARR: arr,
-    valuationLow: arr * 5,
-    valuationMid: arr * 10,
-    valuationHigh: arr * 15,
+    valuationLow: arr * VALUATION_MULTIPLES.CONSERVATIVE,
+    valuationMid: arr * VALUATION_MULTIPLES.TYPICAL,
+    valuationHigh: arr * VALUATION_MULTIPLES.HIGH_GROWTH,
   };
 }
 
@@ -27,7 +33,7 @@ export function calculateValuation(arr: number): ValuationProjection {
  * Calculate ARR from MRR
  */
 export function calculateARR(mrr: number): number {
-  return mrr * 12;
+  return mrr * MONTHS_PER_YEAR;
 }
 
 /**
@@ -82,8 +88,8 @@ export function calculateLTVCACRatio(ltv: number, cac: number): number | null {
  */
 export function getLTVCACHealth(ratio: number | null): 'healthy' | 'acceptable' | 'concerning' {
   if (ratio === null) return 'concerning';
-  if (ratio >= 3) return 'healthy';
-  if (ratio >= 1) return 'acceptable';
+  if (ratio >= LTV_CAC_THRESHOLDS.HEALTHY) return 'healthy';
+  if (ratio >= LTV_CAC_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'concerning';
 }
 
@@ -108,8 +114,8 @@ export function calculatePaybackPeriod(
  */
 export function getPaybackHealth(months: number | null): 'healthy' | 'acceptable' | 'concerning' {
   if (months === null) return 'concerning';
-  if (months <= 12) return 'healthy';
-  if (months <= 24) return 'acceptable';
+  if (months <= PAYBACK_PERIOD_THRESHOLDS.HEALTHY) return 'healthy';
+  if (months <= PAYBACK_PERIOD_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'concerning';
 }
 
@@ -133,9 +139,9 @@ export function calculateMilestones(
   ];
 
   return milestones.map(({ label, targetARR }) => {
-    // ARR = (customers * ARPU) * 12
-    // customers = targetARR / (ARPU * 12)
-    const customersNeeded = arpu > 0 ? Math.ceil(targetARR / (arpu * 12)) : 0;
+    // ARR = (customers * ARPU) * MONTHS_PER_YEAR
+    // customers = targetARR / (ARPU * MONTHS_PER_YEAR)
+    const customersNeeded = arpu > 0 ? Math.ceil(targetARR / (arpu * MONTHS_PER_YEAR)) : 0;
 
     // Months to reach = ln(targetCustomers / currentCustomers) / ln(1 + growthRate)
     let monthsToReach: number | null = null;
@@ -193,19 +199,6 @@ export function calculateBreakEvenTimeline(
 }
 
 // ============================================================================
-// Gross Margin Health
-// ============================================================================
-
-/**
- * Determine gross margin health status
- */
-export function getGrossMarginHealth(grossMargin: number): 'healthy' | 'acceptable' | 'concerning' {
-  if (grossMargin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
-  if (grossMargin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
-  return 'concerning';
-}
-
-// ============================================================================
 // Complete Investor Metrics
 // ============================================================================
 
@@ -233,7 +226,7 @@ export function calculateInvestorMetrics(params: {
     estimatedCac = 0,
   } = params;
 
-  const arr = mrr * 12;
+  const arr = mrr * MONTHS_PER_YEAR;
   const valuation = calculateValuation(arr);
   const milestones = calculateMilestones(arpu, paidCustomers, monthlyGrowthRate);
   const customersToBreakEven = Math.max(0, breakEvenCustomers - paidCustomers);

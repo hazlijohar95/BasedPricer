@@ -4,7 +4,15 @@
  */
 
 import type { AIProvider } from '../types';
-import { getPricingForModel, DEFAULT_USD_TO_MYR_RATE } from '../data';
+import {
+  getPricingForModel,
+  DEFAULT_USD_TO_MYR_RATE,
+  AI_ESTIMATION,
+  ANALYSIS_COMPLEXITY_THRESHOLDS,
+  COST_CATEGORY_THRESHOLDS,
+  FORMAT_PRECISION_THRESHOLDS,
+  TOKEN_FORMAT_THRESHOLDS,
+} from '../data';
 
 // ============================================================================
 // Types
@@ -44,13 +52,6 @@ export interface ProviderComparison {
   estimatedCostMYR: number;
   isSelected: boolean;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const CHARS_PER_TOKEN_ESTIMATE = 4;
-const TYPICAL_OUTPUT_TOKENS = 2500;
 
 // ============================================================================
 // Token Cost Calculations
@@ -154,13 +155,13 @@ export function estimateAnalysisCost(
   }
 
   // Estimate input tokens from character count
-  // Add overhead for system prompt (~500 tokens) and message formatting
-  const estimatedInputTokens = Math.ceil(totalChars / CHARS_PER_TOKEN_ESTIMATE) + 500;
+  // Add overhead for system prompt and message formatting
+  const estimatedInputTokens = Math.ceil(totalChars / AI_ESTIMATION.CHARS_PER_TOKEN) + AI_ESTIMATION.SYSTEM_PROMPT_OVERHEAD;
 
   // Estimate output tokens based on analysis complexity
   const estimatedOutputTokens = Math.min(
-    TYPICAL_OUTPUT_TOKENS + (fileCount * 50),
-    4000
+    AI_ESTIMATION.TYPICAL_OUTPUT_TOKENS + (fileCount * AI_ESTIMATION.TOKENS_PER_FILE),
+    AI_ESTIMATION.MAX_OUTPUT_TOKENS
   );
 
   const inputCost = (estimatedInputTokens / 1_000_000) * pricing.inputPricePerMillion;
@@ -170,9 +171,9 @@ export function estimateAnalysisCost(
 
   // Confidence based on data quality
   let confidence: 'low' | 'medium' | 'high' = 'medium';
-  if (fileCount > 30 || totalChars > 100000) {
+  if (fileCount > ANALYSIS_COMPLEXITY_THRESHOLDS.COMPLEX_FILE_COUNT || totalChars > ANALYSIS_COMPLEXITY_THRESHOLDS.COMPLEX_CHAR_COUNT) {
     confidence = 'low';
-  } else if (fileCount > 5 && totalChars > 10000) {
+  } else if (fileCount > ANALYSIS_COMPLEXITY_THRESHOLDS.MEDIUM_FILE_COUNT && totalChars > ANALYSIS_COMPLEXITY_THRESHOLDS.MEDIUM_CHAR_COUNT) {
     confidence = 'high';
   }
 
@@ -190,14 +191,14 @@ export function estimateAnalysisCost(
  * Estimate tokens from text
  */
 export function estimateTokensFromText(text: string): number {
-  return Math.ceil(text.length / CHARS_PER_TOKEN_ESTIMATE);
+  return Math.ceil(text.length / AI_ESTIMATION.CHARS_PER_TOKEN);
 }
 
 /**
  * Estimate tokens from character count
  */
 export function estimateTokensFromChars(charCount: number): number {
-  return Math.ceil(charCount / CHARS_PER_TOKEN_ESTIMATE);
+  return Math.ceil(charCount / AI_ESTIMATION.CHARS_PER_TOKEN);
 }
 
 // ============================================================================
@@ -257,14 +258,14 @@ export function formatCost(
 ): string {
   const { showBoth = true, precision = 2 } = options;
 
-  const actualPrecision = usd < 0.01 ? 4 : precision;
+  const actualPrecision = usd < FORMAT_PRECISION_THRESHOLDS.USD ? 4 : precision;
   const usdStr = `$${usd.toFixed(actualPrecision)}`;
 
   if (!showBoth || myr === undefined) {
     return usdStr;
   }
 
-  const myrPrecision = myr < 0.1 ? 4 : 2;
+  const myrPrecision = myr < FORMAT_PRECISION_THRESHOLDS.MYR ? 4 : 2;
   return `${usdStr} (MYR ${myr.toFixed(myrPrecision)})`;
 }
 
@@ -272,11 +273,11 @@ export function formatCost(
  * Format token count for display
  */
 export function formatTokens(tokens: number): string {
-  if (tokens >= 1_000_000) {
-    return `${(tokens / 1_000_000).toFixed(1)}M`;
+  if (tokens >= TOKEN_FORMAT_THRESHOLDS.MILLION) {
+    return `${(tokens / TOKEN_FORMAT_THRESHOLDS.MILLION).toFixed(1)}M`;
   }
-  if (tokens >= 1000) {
-    return `${(tokens / 1000).toFixed(1)}k`;
+  if (tokens >= TOKEN_FORMAT_THRESHOLDS.THOUSAND) {
+    return `${(tokens / TOKEN_FORMAT_THRESHOLDS.THOUSAND).toFixed(1)}k`;
   }
   return tokens.toLocaleString();
 }
@@ -285,8 +286,8 @@ export function formatTokens(tokens: number): string {
  * Get a rough cost category for UI indicators
  */
 export function getCostCategory(usd: number): 'cheap' | 'moderate' | 'expensive' {
-  if (usd < 0.05) return 'cheap';
-  if (usd < 0.20) return 'moderate';
+  if (usd < COST_CATEGORY_THRESHOLDS.CHEAP) return 'cheap';
+  if (usd < COST_CATEGORY_THRESHOLDS.MODERATE) return 'moderate';
   return 'expensive';
 }
 

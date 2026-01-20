@@ -126,8 +126,22 @@ export type { ValidationResult } from './schemas';
 // ============================================================================
 
 export {
-  // Thresholds
+  // Margin Thresholds
   MARGIN_THRESHOLDS,
+  OPERATING_MARGIN_THRESHOLDS,
+
+  // Investor Metrics Thresholds
+  VALUATION_MULTIPLES,
+  LTV_CAC_THRESHOLDS,
+  PAYBACK_PERIOD_THRESHOLDS,
+  MONTHS_PER_YEAR,
+
+  // AI Estimation Constants
+  AI_ESTIMATION,
+  ANALYSIS_COMPLEXITY_THRESHOLDS,
+  COST_CATEGORY_THRESHOLDS,
+  FORMAT_PRECISION_THRESHOLDS,
+  TOKEN_FORMAT_THRESHOLDS,
 
   // Currency
   CURRENCIES,

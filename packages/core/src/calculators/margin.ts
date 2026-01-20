@@ -4,7 +4,7 @@
  */
 
 import type { MarginStatus, MarginHealth, MarginInfo } from '../types';
-import { MARGIN_THRESHOLDS } from '../data';
+import { MARGIN_THRESHOLDS, OPERATING_MARGIN_THRESHOLDS } from '../data';
 
 // ============================================================================
 // Margin Calculations
@@ -84,8 +84,8 @@ export function getGrossMarginHealth(margin: number): MarginHealth {
  * Uses different thresholds: >= 20% healthy, >= 0% acceptable, < 0% low
  */
 export function getOperatingMarginHealth(margin: number): MarginHealth {
-  if (margin >= 20) return 'healthy';
-  if (margin >= 0) return 'acceptable';
+  if (margin >= OPERATING_MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
+  if (margin >= OPERATING_MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
   return 'low';
 }
 

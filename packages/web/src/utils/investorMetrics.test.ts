@@ -131,10 +131,10 @@ describe('investorMetrics', () => {
       expect(getGrossMarginHealth(69.9)).toBe('acceptable');
     });
 
-    it('returns concerning for margins < 50%', () => {
-      expect(getGrossMarginHealth(49)).toBe('concerning');
-      expect(getGrossMarginHealth(30)).toBe('concerning');
-      expect(getGrossMarginHealth(0)).toBe('concerning');
+    it('returns low for margins < 50%', () => {
+      expect(getGrossMarginHealth(49)).toBe('low');
+      expect(getGrossMarginHealth(30)).toBe('low');
+      expect(getGrossMarginHealth(0)).toBe('low');
     });
   });
 
@@ -215,7 +215,7 @@ describe('investorMetrics', () => {
         ...baseParams,
         grossMargin: 40,
       });
-      expect(lowMarginResult.grossMarginHealth).toBe('concerning');
+      expect(lowMarginResult.grossMarginHealth).toBe('low');
     });
 
     it('uses configurable growth rate', () => {

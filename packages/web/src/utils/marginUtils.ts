@@ -1,17 +1,37 @@
 /**
- * Shared margin and color utility functions
- * Used across PricingCalculator, TierConfigurator, and FeatureInventory components
+ * Margin and Color Utility Functions
  *
- * NOTE: All thresholds are centralized in /src/constants/index.ts
+ * This module provides web-specific UI styling utilities for margin displays.
+ * Core calculation logic and types are imported from @basedpricer/core.
+ *
+ * Used across PricingCalculator, TierConfigurator, and FeatureInventory components.
  */
 
 import { MARGIN_THRESHOLDS } from '../constants';
 
 // ============================================================================
-// Margin Status Types
+// Re-export types and functions from core
 // ============================================================================
 
-export type MarginHealth = 'healthy' | 'acceptable' | 'low';
+export type {
+  MarginHealth,
+  TierStatus,
+  FeatureComplexity,
+} from '@basedpricer/core';
+
+// Re-export health check functions from core (single source of truth)
+export {
+  getGrossMarginHealth,
+  getOperatingMarginHealth,
+  getTierMarginHealth,
+} from '@basedpricer/core';
+
+// Backward compatibility: Complexity is now FeatureComplexity in core
+export type Complexity = 'low' | 'medium' | 'high';
+
+// ============================================================================
+// Margin Color Types (Web-specific)
+// ============================================================================
 
 export interface MarginColors {
   text: string;
@@ -21,19 +41,8 @@ export interface MarginColors {
 }
 
 // ============================================================================
-// Gross Margin Utilities (used in PricingCalculator)
-// Uses centralized MARGIN_THRESHOLDS from constants
+// Gross Margin Color Utilities (Web-specific UI)
 // ============================================================================
-
-/**
- * Get margin health status based on gross margin percentage
- * SaaS industry standards: >= HEALTHY is healthy, >= ACCEPTABLE is acceptable, < ACCEPTABLE is low
- */
-export function getGrossMarginHealth(margin: number): MarginHealth {
-  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
-  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
-  return 'low';
-}
 
 /**
  * Get text color class for gross margin display
@@ -91,18 +100,9 @@ export function getGrossMarginColors(margin: number): MarginColors {
 }
 
 // ============================================================================
-// Operating Margin Utilities (used in PricingCalculator)
+// Operating Margin Color Utilities (Web-specific UI)
 // Thresholds: >= 20% healthy, >= 0% acceptable, < 0% loss
 // ============================================================================
-
-/**
- * Get operating margin health status
- */
-export function getOperatingMarginHealth(margin: number): MarginHealth {
-  if (margin >= 20) return 'healthy';
-  if (margin >= 0) return 'acceptable';
-  return 'low';
-}
 
 /**
  * Get text color class for operating margin display
@@ -132,19 +132,8 @@ export function getOperatingMarginBorderColor(margin: number): string {
 }
 
 // ============================================================================
-// Tier Margin Utilities (used in TierConfigurator)
-// Now uses the same centralized thresholds as gross margin for consistency
+// Tier Margin Color Utilities (Web-specific UI)
 // ============================================================================
-
-/**
- * Get tier margin health status
- * Now uses centralized thresholds for consistency across the app
- */
-export function getTierMarginHealth(margin: number): MarginHealth {
-  if (margin >= MARGIN_THRESHOLDS.HEALTHY) return 'healthy';
-  if (margin >= MARGIN_THRESHOLDS.ACCEPTABLE) return 'acceptable';
-  return 'low';
-}
 
 /**
  * Get text color class for tier margin display
@@ -165,10 +154,8 @@ export function getTierMarginBgColor(margin: number): string {
 }
 
 // ============================================================================
-// Complexity Color Utilities (used in FeatureInventory)
+// Complexity Color Utilities (Web-specific UI)
 // ============================================================================
-
-export type Complexity = 'low' | 'medium' | 'high';
 
 /**
  * Get text color class for complexity display
@@ -213,15 +200,16 @@ export function getComplexityBadgeClass(complexity: Complexity): string {
 }
 
 // ============================================================================
-// Status Badge Utilities (used across components)
+// Status Badge Utilities (Web-specific UI)
 // ============================================================================
 
-export type TierStatus = 'active' | 'coming_soon' | 'internal';
+// Import TierStatus from core, but keep local type for backward compatibility
+type LocalTierStatus = 'active' | 'coming_soon' | 'internal';
 
 /**
  * Get badge classes for tier status
  */
-export function getTierStatusBadgeClass(status: TierStatus): string {
+export function getTierStatusBadgeClass(status: LocalTierStatus): string {
   switch (status) {
     case 'active':
       return 'bg-emerald-50 text-emerald-600';
@@ -235,7 +223,7 @@ export function getTierStatusBadgeClass(status: TierStatus): string {
 /**
  * Get display label for tier status
  */
-export function getTierStatusLabel(status: TierStatus): string {
+export function getTierStatusLabel(status: LocalTierStatus): string {
   switch (status) {
     case 'active':
       return 'Active';
@@ -247,7 +235,7 @@ export function getTierStatusLabel(status: TierStatus): string {
 }
 
 // ============================================================================
-// Profit/Loss Color Utilities
+// Profit/Loss Color Utilities (Web-specific UI)
 // ============================================================================
 
 /**
@@ -265,8 +253,7 @@ export function getProfitLossBgColor(value: number): string {
 }
 
 // ============================================================================
-// Price Sensitivity Utilities (used in PricingCalculator)
-// Uses centralized MARGIN_THRESHOLDS from constants
+// Price Sensitivity Utilities (Web-specific UI)
 // ============================================================================
 
 /**

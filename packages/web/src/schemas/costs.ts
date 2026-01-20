@@ -6,6 +6,18 @@
 import { z } from 'zod';
 
 // ============================================================================
+// Validation Result Type (matches core's ValidationResult)
+// ============================================================================
+
+type ValidationResult<T> = {
+  success: true;
+  data: T;
+} | {
+  success: false;
+  error: string;
+};
+
+// ============================================================================
 // Variable Cost Item Schema
 // ============================================================================
 
@@ -69,17 +81,13 @@ export const VariableCostItemsSchema = z.array(VariableCostItemSchema);
 export const FixedCostItemsSchema = z.array(FixedCostItemSchema);
 
 // ============================================================================
-// Validation Helpers
+// Validation Helpers (standardized ValidationResult type)
 // ============================================================================
 
 /**
- * Validate a variable cost item, returning a result object
+ * Validate a variable cost item
  */
-export function validateVariableCostItem(data: unknown): {
-  success: boolean;
-  data?: VariableCostItem;
-  error?: string;
-} {
+export function validateVariableCostItem(data: unknown): ValidationResult<VariableCostItem> {
   const result = VariableCostItemSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -88,13 +96,9 @@ export function validateVariableCostItem(data: unknown): {
 }
 
 /**
- * Validate a fixed cost item, returning a result object
+ * Validate a fixed cost item
  */
-export function validateFixedCostItem(data: unknown): {
-  success: boolean;
-  data?: FixedCostItem;
-  error?: string;
-} {
+export function validateFixedCostItem(data: unknown): ValidationResult<FixedCostItem> {
   const result = FixedCostItemSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -105,11 +109,7 @@ export function validateFixedCostItem(data: unknown): {
 /**
  * Validate an array of variable cost items
  */
-export function validateVariableCostItems(data: unknown): {
-  success: boolean;
-  data?: VariableCostItem[];
-  error?: string;
-} {
+export function validateVariableCostItems(data: unknown): ValidationResult<VariableCostItem[]> {
   const result = VariableCostItemsSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -120,11 +120,7 @@ export function validateVariableCostItems(data: unknown): {
 /**
  * Validate an array of fixed cost items
  */
-export function validateFixedCostItems(data: unknown): {
-  success: boolean;
-  data?: FixedCostItem[];
-  error?: string;
-} {
+export function validateFixedCostItems(data: unknown): ValidationResult<FixedCostItem[]> {
   const result = FixedCostItemsSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };

@@ -6,6 +6,18 @@
 import { z } from 'zod';
 
 // ============================================================================
+// Validation Result Type (matches core's ValidationResult)
+// ============================================================================
+
+type ValidationResult<T> = {
+  success: true;
+  data: T;
+} | {
+  success: false;
+  error: string;
+};
+
+// ============================================================================
 // Tier Limit Schema
 // ============================================================================
 
@@ -83,17 +95,13 @@ export const TiersSchema = z.array(TierSchema);
 export const TierDisplayConfigsSchema = z.record(z.string(), TierDisplayConfigSchema);
 
 // ============================================================================
-// Validation Helpers
+// Validation Helpers (standardized ValidationResult type)
 // ============================================================================
 
 /**
  * Validate a single tier
  */
-export function validateTier(data: unknown): {
-  success: boolean;
-  data?: Tier;
-  error?: string;
-} {
+export function validateTier(data: unknown): ValidationResult<Tier> {
   const result = TierSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -104,11 +112,7 @@ export function validateTier(data: unknown): {
 /**
  * Validate an array of tiers
  */
-export function validateTiers(data: unknown): {
-  success: boolean;
-  data?: Tier[];
-  error?: string;
-} {
+export function validateTiers(data: unknown): ValidationResult<Tier[]> {
   const result = TiersSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -119,11 +123,7 @@ export function validateTiers(data: unknown): {
 /**
  * Validate tier display config
  */
-export function validateTierDisplayConfig(data: unknown): {
-  success: boolean;
-  data?: TierDisplayConfig;
-  error?: string;
-} {
+export function validateTierDisplayConfig(data: unknown): ValidationResult<TierDisplayConfig> {
   const result = TierDisplayConfigSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -134,11 +134,7 @@ export function validateTierDisplayConfig(data: unknown): {
 /**
  * Validate tier display configs map
  */
-export function validateTierDisplayConfigs(data: unknown): {
-  success: boolean;
-  data?: Record<string, TierDisplayConfig>;
-  error?: string;
-} {
+export function validateTierDisplayConfigs(data: unknown): ValidationResult<Record<string, TierDisplayConfig>> {
   const result = TierDisplayConfigsSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };

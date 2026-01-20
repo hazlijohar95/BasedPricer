@@ -222,7 +222,7 @@ export interface InvestorMetrics {
   currentPaidCustomers: number;
   customersToBreakEven: number;
   monthsToBreakEven: number | null;
-  grossMarginHealth: 'healthy' | 'acceptable' | 'concerning';
+  grossMarginHealth: MarginHealth;
   ltvCacRatio: number | null;
   paybackPeriodMonths: number | null;
 }

@@ -26,6 +26,102 @@ export const MARGIN_THRESHOLDS: MarginThresholds = {
   MINIMUM: 0,       // < 50% is concerning
 } as const;
 
+/**
+ * Operating margin thresholds (different from gross margin)
+ * Operating margin = (Revenue - COGS - Operating Expenses) / Revenue
+ */
+export const OPERATING_MARGIN_THRESHOLDS = {
+  HEALTHY: 20,      // >= 20% is healthy
+  ACCEPTABLE: 0,    // >= 0% is acceptable (not losing money)
+} as const;
+
+// ============================================================================
+// Investor Metrics Thresholds
+// ============================================================================
+
+/**
+ * SaaS valuation multiples based on ARR
+ * Industry standard ranges for early-stage to growth SaaS
+ */
+export const VALUATION_MULTIPLES = {
+  CONSERVATIVE: 5,  // 5x ARR - conservative/early stage
+  TYPICAL: 10,      // 10x ARR - typical SaaS multiple
+  HIGH_GROWTH: 15,  // 15x ARR - high growth premium
+} as const;
+
+/**
+ * LTV:CAC ratio thresholds
+ * Measures customer acquisition efficiency
+ */
+export const LTV_CAC_THRESHOLDS = {
+  HEALTHY: 3,       // >= 3:1 is healthy (industry target: 3:1 to 5:1)
+  ACCEPTABLE: 1,    // >= 1:1 is acceptable (breaking even on acquisition)
+} as const;
+
+/**
+ * Payback period thresholds in months
+ * How long to recover CAC from a customer
+ */
+export const PAYBACK_PERIOD_THRESHOLDS = {
+  HEALTHY: 12,      // <= 12 months is healthy
+  ACCEPTABLE: 24,   // <= 24 months is acceptable
+} as const;
+
+/**
+ * Months per year constant for ARR calculations
+ */
+export const MONTHS_PER_YEAR = 12;
+
+// ============================================================================
+// AI Cost Estimation Constants
+// ============================================================================
+
+/**
+ * Constants for AI token and cost estimation
+ */
+export const AI_ESTIMATION = {
+  CHARS_PER_TOKEN: 4,           // Average characters per token
+  TYPICAL_OUTPUT_TOKENS: 2500,  // Typical analysis output size
+  MAX_OUTPUT_TOKENS: 4000,      // Maximum output token cap
+  SYSTEM_PROMPT_OVERHEAD: 500,  // System prompt token overhead
+  TOKENS_PER_FILE: 50,          // Additional tokens per file analyzed
+} as const;
+
+/**
+ * Thresholds for determining analysis complexity
+ */
+export const ANALYSIS_COMPLEXITY_THRESHOLDS = {
+  COMPLEX_FILE_COUNT: 30,       // File count for "complex" analysis
+  COMPLEX_CHAR_COUNT: 100000,   // Character count for "complex" analysis
+  MEDIUM_FILE_COUNT: 5,         // File count for "medium" analysis
+  MEDIUM_CHAR_COUNT: 10000,     // Character count for "medium" analysis
+} as const;
+
+/**
+ * Cost categorization thresholds in USD
+ */
+export const COST_CATEGORY_THRESHOLDS = {
+  CHEAP: 0.05,      // < $0.05 is cheap
+  MODERATE: 0.20,   // < $0.20 is moderate, >= is expensive
+} as const;
+
+/**
+ * Formatting precision thresholds
+ * Below these values, show 4 decimal places instead of 2
+ */
+export const FORMAT_PRECISION_THRESHOLDS = {
+  USD: 0.01,        // Show 4 decimals below $0.01
+  MYR: 0.1,         // Show 4 decimals below RM 0.1
+} as const;
+
+/**
+ * Token display formatting thresholds
+ */
+export const TOKEN_FORMAT_THRESHOLDS = {
+  MILLION: 1_000_000,
+  THOUSAND: 1_000,
+} as const;
+
 // ============================================================================
 // Currency Configuration
 // ============================================================================

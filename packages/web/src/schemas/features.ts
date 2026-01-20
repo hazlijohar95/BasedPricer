@@ -6,6 +6,18 @@
 import { z } from 'zod';
 
 // ============================================================================
+// Validation Result Type (matches core's ValidationResult)
+// ============================================================================
+
+type ValidationResult<T> = {
+  success: true;
+  data: T;
+} | {
+  success: false;
+  error: string;
+};
+
+// ============================================================================
 // Feature Source Schema
 // ============================================================================
 
@@ -95,17 +107,13 @@ export type BusinessTypeFeatureConfig = z.infer<typeof BusinessTypeFeatureConfig
 export const FeaturesSchema = z.array(FeatureSchema);
 
 // ============================================================================
-// Validation Helpers
+// Validation Helpers (standardized ValidationResult type)
 // ============================================================================
 
 /**
  * Validate a single feature
  */
-export function validateFeature(data: unknown): {
-  success: boolean;
-  data?: Feature;
-  error?: string;
-} {
+export function validateFeature(data: unknown): ValidationResult<Feature> {
   const result = FeatureSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
@@ -116,11 +124,7 @@ export function validateFeature(data: unknown): {
 /**
  * Validate an array of features
  */
-export function validateFeatures(data: unknown): {
-  success: boolean;
-  data?: Feature[];
-  error?: string;
-} {
+export function validateFeatures(data: unknown): ValidationResult<Feature[]> {
   const result = FeaturesSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
