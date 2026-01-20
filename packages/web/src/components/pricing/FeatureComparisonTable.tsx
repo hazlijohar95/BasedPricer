@@ -14,14 +14,14 @@ export function FeatureComparisonTable({ tiers }: FeatureComparisonTableProps) {
         <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Compare All Features</h3>
       </div>
       <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full min-w-[500px]">
+        <table className="w-full min-w-[500px]" aria-label="Feature comparison across pricing tiers">
           <thead>
             <tr className="bg-gray-50/50">
-              <th className="text-left py-3 sm:py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/3 sticky left-0 bg-gray-50/50 z-10">
+              <th scope="col" className="text-left py-3 sm:py-4 px-3 sm:px-6 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider w-1/3 sticky left-0 bg-gray-50/50 z-10">
                 Feature
               </th>
               {tiers.map(tier => (
-                <th key={tier.id} className="text-center py-3 sm:py-4 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                <th scope="col" key={tier.id} className="text-center py-3 sm:py-4 px-2 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   {tier.name}
                 </th>
               ))}

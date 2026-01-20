@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Check, Warning, Info, X } from '@phosphor-icons/react';
 
 export interface ToastData {
@@ -40,17 +40,19 @@ const styles = {
 export function Toast({ toast, onDismiss }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const Icon = icons[toast.type];
   const style = styles[toast.type];
   const duration = toast.duration ?? 4000;
 
   const handleDismiss = useCallback(() => {
+    if (isLeaving) return; // Prevent double-dismiss
     setIsLeaving(true);
-    setTimeout(() => {
+    dismissTimeoutRef.current = setTimeout(() => {
       onDismiss(toast.id);
     }, 200);
-  }, [onDismiss, toast.id]);
+  }, [onDismiss, toast.id, isLeaving]);
 
   useEffect(() => {
     // Trigger enter animation
@@ -59,11 +61,16 @@ export function Toast({ toast, onDismiss }: ToastProps) {
     });
 
     // Auto-dismiss
-    const dismissTimer = setTimeout(() => {
+    const autoDismissTimer = setTimeout(() => {
       handleDismiss();
     }, duration);
 
-    return () => clearTimeout(dismissTimer);
+    return () => {
+      clearTimeout(autoDismissTimer);
+      if (dismissTimeoutRef.current) {
+        clearTimeout(dismissTimeoutRef.current);
+      }
+    };
   }, [duration, handleDismiss]);
 
   return (
@@ -76,6 +83,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         transform transition-all duration-200 ease-out
         ${style.bg}
         ${isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'}
+        ${isLeaving ? 'pointer-events-none' : ''}
       `}
     >
       <div

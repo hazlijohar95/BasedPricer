@@ -117,17 +117,19 @@ export function ProjectManager() {
                 setEditName(currentProjectName);
                 setIsEditing(true);
               }}
-              className="p-2 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-100 rounded transition-colors touch-manipulation"
+              className="p-2 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-100 rounded transition-colors touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
               title="Rename project"
+              aria-label="Rename project"
             >
-              <PencilSimple size={14} />
+              <PencilSimple size={14} aria-hidden="true" />
             </button>
             <button
               onClick={handleSave}
-              className="p-2 sm:p-1.5 text-gray-400 hover:text-[#253ff6] hover:bg-[rgba(37,63,246,0.08)] active:bg-[rgba(37,63,246,0.08)] rounded transition-colors touch-manipulation"
+              className="p-2 sm:p-1.5 text-gray-400 hover:text-[#253ff6] hover:bg-[rgba(37,63,246,0.08)] active:bg-[rgba(37,63,246,0.08)] rounded transition-colors touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
               title="Save project"
+              aria-label="Save project"
             >
-              <FloppyDisk size={14} />
+              <FloppyDisk size={14} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -182,19 +184,21 @@ export function ProjectManager() {
               projects.map((name) => (
                 <div
                   key={name}
-                  className="flex items-center justify-between px-3 py-3 sm:py-2 hover:bg-gray-50 active:bg-gray-50 cursor-pointer group touch-manipulation"
+                  className="flex items-center justify-between px-3 py-3 sm:py-2 hover:bg-gray-50 active:bg-gray-50 cursor-pointer group touch-manipulation focus-visible:bg-gray-100 focus-visible:outline-none"
                   onClick={() => handleLoadProject(name)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && handleLoadProject(name)}
+                  aria-label={`Load project: ${name}`}
                 >
                   <span className="text-sm text-gray-700 truncate flex-1" title={name}>{name}</span>
                   <button
                     onClick={(e) => handleDeleteProject(name, e)}
-                    className="p-2 sm:p-1 text-gray-300 hover:text-red-500 active:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation"
+                    className="p-2 sm:p-1 text-gray-300 hover:text-red-500 active:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
                     title="Delete project"
+                    aria-label={`Delete project: ${name}`}
                   >
-                    <Trash size={14} />
+                    <Trash size={14} aria-hidden="true" />
                   </button>
                 </div>
               ))

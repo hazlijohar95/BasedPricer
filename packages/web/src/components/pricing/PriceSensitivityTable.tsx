@@ -26,15 +26,15 @@ export function PriceSensitivityTable({ data }: PriceSensitivityTableProps) {
     <div className="card p-6">
       <h3 className="font-medium text-gray-900 mb-4">Basic Tier Price Sensitivity</h3>
       <div className="overflow-hidden rounded-[0.2rem] border border-[#e4e4e4]">
-        <table className="w-full">
+        <table className="w-full" aria-label="Price sensitivity analysis">
           <thead>
             <tr className="table-header">
-              <th className="text-left py-3 px-4">Price</th>
-              <th className="text-right py-3 px-4">MRR</th>
-              <th className="text-right py-3 px-4">Gross Profit</th>
-              <th className="text-right py-3 px-4">Operating Profit</th>
-              <th className="text-right py-3 px-4">Gross Margin</th>
-              <th className="text-center py-3 px-4">Status</th>
+              <th scope="col" className="text-left py-3 px-4">Price</th>
+              <th scope="col" className="text-right py-3 px-4">MRR</th>
+              <th scope="col" className="text-right py-3 px-4">Gross Profit</th>
+              <th scope="col" className="text-right py-3 px-4">Operating Profit</th>
+              <th scope="col" className="text-right py-3 px-4">Gross Margin</th>
+              <th scope="col" className="text-center py-3 px-4">Status</th>
             </tr>
           </thead>
           <tbody>

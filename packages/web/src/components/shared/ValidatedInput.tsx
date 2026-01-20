@@ -113,7 +113,7 @@ export function ValidatedInput({
     'input-field w-full',
     showError && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
     showWarning && 'border-amber-500 focus:border-amber-500 focus:ring-amber-500/20',
-    disabled && 'bg-gray-50 text-gray-400 cursor-not-allowed',
+    disabled && 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200',
     prefix && 'pl-8',
     suffix && 'pr-12',
     className,

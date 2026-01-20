@@ -16,12 +16,12 @@ export function BillingCycleToggle({
   const isSmall = size === 'sm';
 
   return (
-    <div className={`inline-flex items-center bg-gray-100 p-1 rounded-[0.2rem] ${
-      isSmall ? '' : 'bg-gray-100/80'
-    }`}>
+    <div className="inline-flex items-center bg-gray-100 p-1 rounded-[0.2rem]" role="radiogroup" aria-label="Billing cycle">
       <button
         onClick={() => onChange('monthly')}
-        className={`${isSmall ? 'px-3 sm:px-4 py-1.5 text-xs' : 'px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm'} font-medium rounded-[0.2rem] transition-all duration-200 touch-manipulation ${
+        role="radio"
+        aria-checked={value === 'monthly'}
+        className={`${isSmall ? 'px-3 sm:px-4 py-1.5 text-xs' : 'px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm'} font-medium rounded-[0.2rem] transition-all duration-200 touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 ${
           value === 'monthly'
             ? 'bg-white text-gray-900 shadow-sm'
             : 'text-gray-500 hover:text-gray-700 active:text-gray-700'
@@ -31,7 +31,9 @@ export function BillingCycleToggle({
       </button>
       <button
         onClick={() => onChange('annual')}
-        className={`${isSmall ? 'px-3 sm:px-4 py-1.5 text-xs' : 'px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm'} font-medium rounded-[0.2rem] transition-all duration-200 flex items-center gap-1 sm:gap-1.5 touch-manipulation ${
+        role="radio"
+        aria-checked={value === 'annual'}
+        className={`${isSmall ? 'px-3 sm:px-4 py-1.5 text-xs' : 'px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm'} font-medium rounded-[0.2rem] transition-all duration-200 flex items-center gap-1 sm:gap-1.5 touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 ${
           value === 'annual'
             ? 'bg-white text-gray-900 shadow-sm'
             : 'text-gray-500 hover:text-gray-700 active:text-gray-700'

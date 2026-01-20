@@ -97,10 +97,10 @@ export function PricingCard({
           }}
           className={`w-full py-2.5 sm:py-3 px-4 rounded-[0.2rem] font-medium text-xs sm:text-sm transition-all duration-200 mb-4 sm:mb-6 touch-manipulation ${
             config.ctaStyle === 'primary'
-              ? 'bg-[#253ff6] text-white hover:bg-[#1e35d4] active:bg-[#1e35d4] shadow-md shadow-[#253ff6]/20'
+              ? 'bg-[#253ff6] text-white hover:bg-[#1e35d4] active:bg-[#1e35d4] shadow-md shadow-[#253ff6]/20 focus-visible:ring-2 focus-visible:ring-[#253ff6] focus-visible:ring-offset-2'
               : config.ctaStyle === 'secondary'
-              ? 'bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-800'
-              : 'border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 active:bg-gray-50'
+              ? 'bg-gray-900 text-white hover:bg-gray-800 active:bg-gray-800 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2'
+              : 'border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 active:bg-gray-50 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2'
           } ${isComingSoon ? 'opacity-60 cursor-not-allowed' : ''} ${ctaClicked ? 'scale-95' : ''}`}
           disabled={isComingSoon}
         >

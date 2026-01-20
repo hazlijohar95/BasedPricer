@@ -218,18 +218,20 @@ function MainApp() {
               <button
                 onClick={undo}
                 disabled={!canUndo}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
                 title="Undo (Ctrl+Z)"
+                aria-label="Undo (Ctrl+Z)"
               >
-                <ArrowCounterClockwise size={16} />
+                <ArrowCounterClockwise size={16} aria-hidden="true" />
               </button>
               <button
                 onClick={redo}
                 disabled={!canRedo}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
                 title="Redo (Ctrl+Shift+Z)"
+                aria-label="Redo (Ctrl+Shift+Z)"
               >
-                <ArrowClockwise size={16} />
+                <ArrowClockwise size={16} aria-hidden="true" />
               </button>
             </div>
             <div className="text-xs text-gray-500">
@@ -393,7 +395,7 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2"
               >
                 Cancel
               </button>
@@ -402,7 +404,8 @@ function OverviewDashboard({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
                   resetToEmpty();
                   setShowResetConfirm(false);
                 }}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
+                autoFocus
               >
                 Reset All
               </button>
