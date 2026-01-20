@@ -8,6 +8,7 @@ import {
   PricingModelTypeSchema,
   ReportNotesSchema,
   StakeholderTypeSchema,
+  ReportSettingsSchema,
   validateReportData,
   validatePricingState,
   isValidReportData,
@@ -89,6 +90,42 @@ describe('StakeholderTypeSchema', () => {
   it('rejects invalid stakeholder type', () => {
     expect(() => StakeholderTypeSchema.parse('designer')).toThrow();
     expect(() => StakeholderTypeSchema.parse('manager')).toThrow();
+  });
+});
+
+describe('ReportSettingsSchema', () => {
+  it('accepts valid growth rate values', () => {
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: 0.05 })).not.toThrow();
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: 0 })).not.toThrow();
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: 0.5 })).not.toThrow();
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: 1 })).not.toThrow();
+  });
+
+  it('rejects growth rate below 0', () => {
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: -0.1 })).toThrow();
+  });
+
+  it('rejects growth rate above 1', () => {
+    expect(() => ReportSettingsSchema.parse({ monthlyGrowthRate: 1.5 })).toThrow();
+  });
+
+  it('provides default growth rate of 0.05', () => {
+    const result = ReportSettingsSchema.parse({});
+    expect(result.monthlyGrowthRate).toBe(0.05);
+  });
+
+  it('validates different growth rate scenarios', () => {
+    // Low growth (2%)
+    const lowGrowth = ReportSettingsSchema.parse({ monthlyGrowthRate: 0.02 });
+    expect(lowGrowth.monthlyGrowthRate).toBe(0.02);
+
+    // High growth (20%)
+    const highGrowth = ReportSettingsSchema.parse({ monthlyGrowthRate: 0.20 });
+    expect(highGrowth.monthlyGrowthRate).toBe(0.20);
+
+    // No growth (0%)
+    const noGrowth = ReportSettingsSchema.parse({ monthlyGrowthRate: 0 });
+    expect(noGrowth.monthlyGrowthRate).toBe(0);
   });
 });
 
@@ -180,6 +217,32 @@ describe('validateReportData', () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     expect(result.errors).toBeDefined();
+  });
+
+  it('validates report data with settings', () => {
+    const reportData = {
+      projectName: 'Test Project',
+      createdAt: '2024-01-15T10:00:00Z',
+      state: createValidState(),
+      notes: {},
+      settings: {
+        monthlyGrowthRate: 0.08,
+      },
+    };
+    const result = validateReportData(reportData);
+    expect(result.success).toBe(true);
+    expect(result.data?.settings?.monthlyGrowthRate).toBe(0.08);
+  });
+
+  it('accepts report data without settings', () => {
+    const reportData = {
+      projectName: 'Test Project',
+      createdAt: '2024-01-15T10:00:00Z',
+      state: createValidState(),
+      notes: {},
+    };
+    const result = validateReportData(reportData);
+    expect(result.success).toBe(true);
   });
 });
 
@@ -309,6 +372,60 @@ describe('parseReportDataSafe', () => {
       expect(result.projectName).toBe('Test');
       expect(result.createdAt).toBeDefined();
       expect(result.notes).toEqual({});
+    }
+  });
+
+  it('provides default settings for legacy data without settings', () => {
+    const partialData = {
+      projectName: 'Legacy Project',
+      state: {
+        variableCosts: [],
+        fixedCosts: [],
+        customerCount: 100,
+        selectedPrice: 25,
+        tiers: [],
+        features: [],
+        tierDisplayConfigs: {},
+        utilizationRate: 0.7,
+        tierDistribution: {},
+        businessType: null,
+        businessTypeConfidence: 0,
+        pricingModelType: 'feature_tiered',
+      },
+    };
+    const result = parseReportDataSafe(partialData);
+    expect(result).not.toBeNull();
+    if (result) {
+      expect(result.settings).toBeDefined();
+      expect(result.settings?.monthlyGrowthRate).toBe(0.05);
+    }
+  });
+
+  it('preserves existing settings when provided', () => {
+    const dataWithSettings = {
+      projectName: 'Project with Settings',
+      state: {
+        variableCosts: [],
+        fixedCosts: [],
+        customerCount: 100,
+        selectedPrice: 25,
+        tiers: [],
+        features: [],
+        tierDisplayConfigs: {},
+        utilizationRate: 0.7,
+        tierDistribution: {},
+        businessType: null,
+        businessTypeConfidence: 0,
+        pricingModelType: 'feature_tiered',
+      },
+      settings: {
+        monthlyGrowthRate: 0.12,
+      },
+    };
+    const result = parseReportDataSafe(dataWithSettings);
+    expect(result).not.toBeNull();
+    if (result) {
+      expect(result.settings?.monthlyGrowthRate).toBe(0.12);
     }
   });
 });

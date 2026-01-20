@@ -1,8 +1,12 @@
 import { useMemo } from 'react';
 import { CurrencyDollar, TrendUp, Percent, ChartBar, Warning, CheckCircle } from '@phosphor-icons/react';
 import type { ReportData } from '../../utils/reportEncoder';
-import type { VariableCostItem, FixedCostItem } from '../../utils/costCalculator';
-import { MARGIN_THRESHOLDS } from '../../constants';
+import {
+  calculateCOGSBreakdown,
+  calculateMargin,
+  calculateProfit,
+  getMarginStatus,
+} from '../../utils/costCalculator';
 
 interface AccountantReportProps {
   reportData: ReportData;
@@ -11,30 +15,21 @@ interface AccountantReportProps {
 export function AccountantReport({ reportData }: AccountantReportProps) {
   const { state } = reportData;
 
-  // Calculate costs
+  // Calculate costs using shared utility (single source of truth)
   const costs = useMemo(() => {
-    const variableTotal = state.variableCosts.reduce(
-      (sum: number, item: VariableCostItem) => sum + item.costPerUnit * item.usagePerCustomer,
-      0
+    return calculateCOGSBreakdown(
+      state.variableCosts,
+      state.fixedCosts,
+      state.customerCount
     );
-    const fixedTotal = state.fixedCosts.reduce(
-      (sum: number, item: FixedCostItem) => sum + item.monthlyCost,
-      0
-    );
-    const fixedPerCustomer = state.customerCount > 0 ? fixedTotal / state.customerCount : 0;
-    const totalCOGS = variableTotal + fixedPerCustomer;
-
-    return { variableTotal, fixedTotal, fixedPerCustomer, totalCOGS };
   }, [state.variableCosts, state.fixedCosts, state.customerCount]);
 
-  // Calculate margin and profit
-  const margin = state.selectedPrice > 0
-    ? ((state.selectedPrice - costs.totalCOGS) / state.selectedPrice) * 100
-    : 0;
-  const profit = state.selectedPrice - costs.totalCOGS;
+  // Calculate margin and profit using shared utilities
+  const margin = calculateMargin(state.selectedPrice, costs.totalCOGS);
+  const profit = calculateProfit(state.selectedPrice, costs.totalCOGS);
 
-  // Get margin status
-  const marginStatus = margin >= MARGIN_THRESHOLDS.HEALTHY ? 'great' : margin >= MARGIN_THRESHOLDS.ACCEPTABLE ? 'ok' : 'low';
+  // Get margin status using shared utility
+  const marginStatus = getMarginStatus(margin);
 
   // Calculate MRR and ARR
   const mrr = state.selectedPrice * state.customerCount;
@@ -45,24 +40,43 @@ export function AccountantReport({ reportData }: AccountantReportProps) {
     ? Math.ceil(costs.fixedTotal / profit)
     : 0;
 
-  // P&L Projection (12 months)
+  // P&L Projection (12 months) with growth modeling
+  const monthlyGrowthRate = reportData.settings?.monthlyGrowthRate ?? 0.05; // Default 5%
+  const growthPct = (monthlyGrowthRate * 100).toFixed(0);
   const projections = useMemo(() => {
+    let cumulativeCustomers = state.customerCount;
+    let cumulativeRevenue = 0;
+    let cumulativeProfit = 0;
+
     return Array.from({ length: 12 }, (_, i) => {
       const month = i + 1;
-      const revenue = mrr;
-      const variableCosts = costs.variableTotal * state.customerCount;
+      // Apply growth for months after the first
+      if (i > 0) {
+        cumulativeCustomers = Math.round(cumulativeCustomers * (1 + monthlyGrowthRate));
+      }
+      const customers = cumulativeCustomers;
+      const revenue = state.selectedPrice * customers;
+      const variableCosts = costs.variableTotal * customers;
       const totalCosts = variableCosts + costs.fixedTotal;
       const grossProfit = revenue - totalCosts;
+
+      cumulativeRevenue += revenue;
+      cumulativeProfit += grossProfit;
+
       return {
         month,
+        customers,
         revenue,
         variableCosts,
         fixedCosts: costs.fixedTotal,
         totalCosts,
         grossProfit,
+        cumulativeRevenue,
+        cumulativeProfit,
+        growthPct: i > 0 ? monthlyGrowthRate * 100 : 0,
       };
     });
-  }, [mrr, costs, state.customerCount]);
+  }, [state.selectedPrice, costs, state.customerCount, monthlyGrowthRate]);
 
   return (
     <div className="space-y-6">
@@ -296,7 +310,7 @@ export function AccountantReport({ reportData }: AccountantReportProps) {
 
       {/* P&L Projection Table */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 report-section print:break-before">
-        <h3 className="font-semibold text-gray-900 mb-4">12-Month P&L Projection</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">12-Month P&L Projection ({growthPct}% Monthly Growth)</h3>
         <div className="overflow-x-auto print:overflow-visible">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
@@ -310,6 +324,14 @@ export function AccountantReport({ reportData }: AccountantReportProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              <tr className="bg-blue-50/50">
+                <td className="px-3 py-2 text-blue-700 font-medium sticky left-0 bg-blue-50/50 print:static print:bg-blue-50">Customers</td>
+                {projections.map((p) => (
+                  <td key={p.month} className="px-3 py-2 text-right text-blue-700 font-mono">
+                    {p.customers.toLocaleString()}
+                  </td>
+                ))}
+              </tr>
               <tr>
                 <td className="px-3 py-2 text-gray-700 font-medium sticky left-0 bg-white print:static">Revenue</td>
                 {projections.map((p) => (
@@ -345,11 +367,38 @@ export function AccountantReport({ reportData }: AccountantReportProps) {
                 ))}
               </tr>
             </tbody>
+            <tfoot className="bg-gray-100 border-t-2 border-gray-300">
+              <tr>
+                <td className="px-3 py-2 text-gray-700 font-semibold sticky left-0 bg-gray-100 print:static">12-Month Total</td>
+                <td colSpan={11}></td>
+                <td className="px-3 py-2 text-right">
+                  <div className="text-xs text-gray-500">Revenue</div>
+                  <div className="font-mono font-semibold text-gray-900">
+                    MYR {projections[11]?.cumulativeRevenue.toLocaleString()}
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 sticky left-0 bg-gray-100 print:static"></td>
+                <td colSpan={11}></td>
+                <td className={`px-3 py-2 text-right ${
+                  (projections[11]?.cumulativeProfit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
+                }`}>
+                  <div className="text-xs text-gray-500">Profit</div>
+                  <div className="font-mono font-semibold">
+                    MYR {projections[11]?.cumulativeProfit.toLocaleString()}
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
-        <p className="text-xs text-gray-400 mt-3">
-          * Based on current pricing (MYR {state.selectedPrice}/mo) and {state.customerCount} customers. Does not include customer growth.
-        </p>
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-xs text-blue-700">
+            <strong>Growth Assumptions:</strong> Projections based on {growthPct}% monthly customer growth rate. Starting with {state.customerCount} customers @ MYR {state.selectedPrice}/mo,
+            growing to {projections[11]?.customers.toLocaleString()} customers by month 12 ({((projections[11]?.customers / state.customerCount - 1) * 100).toFixed(0)}% total growth).
+          </p>
+        </div>
       </div>
     </div>
   );

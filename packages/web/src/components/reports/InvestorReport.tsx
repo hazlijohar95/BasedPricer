@@ -10,7 +10,11 @@ import {
   Percent,
 } from '@phosphor-icons/react';
 import type { ReportData } from '../../utils/reportEncoder';
-import type { VariableCostItem, FixedCostItem } from '../../utils/costCalculator';
+import {
+  calculateCOGSBreakdown,
+  calculateMargin,
+  calculateProfit,
+} from '../../utils/costCalculator';
 import {
   calculateInvestorMetrics,
   formatCurrency,
@@ -24,33 +28,32 @@ interface InvestorReportProps {
 export function InvestorReport({ reportData }: InvestorReportProps) {
   const { state } = reportData;
 
-  // Calculate costs
+  // Calculate costs using shared utility (single source of truth)
   const costs = useMemo(() => {
-    const variableTotal = state.variableCosts.reduce(
-      (sum: number, item: VariableCostItem) => sum + item.costPerUnit * item.usagePerCustomer,
-      0
+    return calculateCOGSBreakdown(
+      state.variableCosts,
+      state.fixedCosts,
+      state.customerCount
     );
-    const fixedTotal = state.fixedCosts.reduce(
-      (sum: number, item: FixedCostItem) => sum + item.monthlyCost,
-      0
-    );
-    const fixedPerCustomer = state.customerCount > 0 ? fixedTotal / state.customerCount : 0;
-    const totalCOGS = variableTotal + fixedPerCustomer;
-
-    return { variableTotal, fixedTotal, fixedPerCustomer, totalCOGS };
   }, [state.variableCosts, state.fixedCosts, state.customerCount]);
 
-  // Calculate key metrics
-  const margin = state.selectedPrice > 0
-    ? ((state.selectedPrice - costs.totalCOGS) / state.selectedPrice) * 100
-    : 0;
-  const profit = state.selectedPrice - costs.totalCOGS;
+  // Calculate key metrics using shared utilities
+  const margin = calculateMargin(state.selectedPrice, costs.totalCOGS);
+  const profit = calculateProfit(state.selectedPrice, costs.totalCOGS);
   const mrr = state.selectedPrice * state.customerCount;
 
-  // Calculate paid customers (excluding freemium)
-  const tierDist = state.tierDistribution;
-  const freemiumPct = tierDist.freemium || 0;
-  const paidCustomers = Math.round(state.customerCount * (1 - freemiumPct / 100));
+  // Calculate paid customers (excluding free tiers)
+  // Free tier can be named "freemium", "free", or have 0 price
+  const tierDist = state.tierDistribution as Record<string, number>;
+  const freeTierKeys = ['freemium', 'free'];
+  const freePct = Object.entries(tierDist).reduce((sum, [key, value]) => {
+    if (freeTierKeys.includes(key.toLowerCase()) ||
+        state.tiers.find(t => t.id === key && t.monthlyPriceMYR === 0)) {
+      return sum + (value || 0);
+    }
+    return sum;
+  }, 0);
+  const paidCustomers = Math.round(state.customerCount * (1 - freePct / 100));
   const arpu = paidCustomers > 0 ? mrr / paidCustomers : state.selectedPrice;
 
   // Break-even
@@ -62,6 +65,10 @@ export function InvestorReport({ reportData }: InvestorReportProps) {
   const avgLifespanMonths = 24;
   const ltv = arpu * avgLifespanMonths * (margin / 100);
 
+  // Get configurable growth rate
+  const monthlyGrowthRate = reportData.settings?.monthlyGrowthRate ?? 0.05; // Default 5%
+  const growthPct = (monthlyGrowthRate * 100).toFixed(0);
+
   // Calculate investor metrics
   const investorMetrics = useMemo(() => {
     return calculateInvestorMetrics({
@@ -70,10 +77,10 @@ export function InvestorReport({ reportData }: InvestorReportProps) {
       arpu,
       grossMargin: margin,
       breakEvenCustomers,
-      monthlyGrowthRate: 0.05, // Default 5%
+      monthlyGrowthRate,
       ltv,
     });
-  }, [mrr, paidCustomers, arpu, margin, breakEvenCustomers, ltv]);
+  }, [mrr, paidCustomers, arpu, margin, breakEvenCustomers, monthlyGrowthRate, ltv]);
 
   return (
     <div className="space-y-6">
@@ -227,7 +234,7 @@ export function InvestorReport({ reportData }: InvestorReportProps) {
                 </div>
                 {!isAchieved && milestone.monthsToReach !== null && (
                   <p className="text-xs text-gray-500 mt-2">
-                    Est. {milestone.monthsToReach} months at 5% monthly growth
+                    Est. {milestone.monthsToReach} months at {growthPct}% monthly growth
                   </p>
                 )}
               </div>
@@ -280,7 +287,7 @@ export function InvestorReport({ reportData }: InvestorReportProps) {
               </span>
             </div>
             <p className="text-xs text-blue-600 mt-1">
-              Based on 5% monthly customer growth
+              Based on {growthPct}% monthly customer growth
             </p>
           </div>
         )}

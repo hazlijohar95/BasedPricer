@@ -23,6 +23,22 @@ import {
   CURRENT_PROJECT_KEY,
   DEFAULT_PROJECT_NAME,
 } from '../constants';
+// Schema validation imports for safe localStorage loading
+import {
+  VariableCostItemSchema,
+  FixedCostItemSchema,
+} from '../schemas/costs';
+import {
+  TierSchema,
+  TierDisplayConfigSchema,
+} from '../schemas/tiers';
+import {
+  FeatureSchema,
+} from '../schemas/features';
+import {
+  BusinessTypeSchema,
+  PricingModelTypeSchema,
+} from '../schemas/reports';
 
 // Re-export COST_PRESETS for backwards compatibility
 export { COST_PRESETS } from '../data/cost-presets';
@@ -305,8 +321,9 @@ const EMPTY_STATE: PricingState = {
 // ============================================================================
 
 /**
- * Validates that loaded state has the expected structure
- * Returns sanitized partial state or null if invalid
+ * Validates that loaded state has the expected structure using Zod schemas
+ * Filters out invalid items from arrays while preserving valid ones
+ * Returns sanitized partial state or null if completely invalid
  */
 function validateLoadedState(data: unknown): Partial<PricingState> | null {
   if (!data || typeof data !== 'object') {
@@ -314,36 +331,185 @@ function validateLoadedState(data: unknown): Partial<PricingState> | null {
   }
 
   const state = data as Record<string, unknown>;
+  const validatedState: Partial<PricingState> = {};
 
-  // Validate core arrays exist and are arrays
-  if (state.variableCosts && !Array.isArray(state.variableCosts)) {
-    console.warn('Invalid variableCosts in loaded state');
-    return null;
-  }
-  if (state.fixedCosts && !Array.isArray(state.fixedCosts)) {
-    console.warn('Invalid fixedCosts in loaded state');
-    return null;
-  }
-  if (state.tiers && !Array.isArray(state.tiers)) {
-    console.warn('Invalid tiers in loaded state');
-    return null;
-  }
-  if (state.features && !Array.isArray(state.features)) {
-    console.warn('Invalid features in loaded state');
-    return null;
-  }
-
-  // Validate numeric fields
-  if (state.customerCount !== undefined && typeof state.customerCount !== 'number') {
-    console.warn('Invalid customerCount in loaded state');
-    return null;
-  }
-  if (state.selectedPrice !== undefined && typeof state.selectedPrice !== 'number') {
-    console.warn('Invalid selectedPrice in loaded state');
-    return null;
+  // Validate and filter variableCosts - keep only valid items
+  if (state.variableCosts !== undefined) {
+    if (!Array.isArray(state.variableCosts)) {
+      console.warn('Invalid variableCosts in loaded state: not an array');
+      return null;
+    }
+    const validCosts: VariableCostItem[] = [];
+    for (const item of state.variableCosts) {
+      const result = VariableCostItemSchema.safeParse(item);
+      if (result.success) {
+        validCosts.push(result.data);
+      } else {
+        console.warn('Skipping invalid variable cost item:', result.error.issues[0]?.message);
+      }
+    }
+    validatedState.variableCosts = validCosts;
   }
 
-  return state as Partial<PricingState>;
+  // Validate and filter fixedCosts - keep only valid items
+  if (state.fixedCosts !== undefined) {
+    if (!Array.isArray(state.fixedCosts)) {
+      console.warn('Invalid fixedCosts in loaded state: not an array');
+      return null;
+    }
+    const validCosts: FixedCostItem[] = [];
+    for (const item of state.fixedCosts) {
+      const result = FixedCostItemSchema.safeParse(item);
+      if (result.success) {
+        validCosts.push(result.data);
+      } else {
+        console.warn('Skipping invalid fixed cost item:', result.error.issues[0]?.message);
+      }
+    }
+    validatedState.fixedCosts = validCosts;
+  }
+
+  // Validate and filter tiers - keep only valid items
+  if (state.tiers !== undefined) {
+    if (!Array.isArray(state.tiers)) {
+      console.warn('Invalid tiers in loaded state: not an array');
+      return null;
+    }
+    const validTiers: Tier[] = [];
+    for (const item of state.tiers) {
+      const result = TierSchema.safeParse(item);
+      if (result.success) {
+        validTiers.push(result.data);
+      } else {
+        console.warn('Skipping invalid tier:', result.error.issues[0]?.message);
+      }
+    }
+    validatedState.tiers = validTiers;
+  }
+
+  // Validate and filter features - keep only valid items
+  if (state.features !== undefined) {
+    if (!Array.isArray(state.features)) {
+      console.warn('Invalid features in loaded state: not an array');
+      return null;
+    }
+    const validFeatures: Feature[] = [];
+    for (const item of state.features) {
+      const result = FeatureSchema.safeParse(item);
+      if (result.success) {
+        validFeatures.push(result.data);
+      } else {
+        console.warn('Skipping invalid feature:', result.error.issues[0]?.message);
+      }
+    }
+    validatedState.features = validFeatures;
+  }
+
+  // Validate and filter tierDisplayConfigs
+  if (state.tierDisplayConfigs !== undefined) {
+    if (typeof state.tierDisplayConfigs !== 'object' || state.tierDisplayConfigs === null) {
+      console.warn('Invalid tierDisplayConfigs in loaded state');
+      validatedState.tierDisplayConfigs = {};
+    } else {
+      const validConfigs: Record<string, TierDisplayConfig> = {};
+      const configs = state.tierDisplayConfigs as Record<string, unknown>;
+      for (const [key, value] of Object.entries(configs)) {
+        const result = TierDisplayConfigSchema.safeParse(value);
+        if (result.success) {
+          validConfigs[key] = result.data;
+        } else {
+          console.warn(`Skipping invalid tier display config for ${key}:`, result.error.issues[0]?.message);
+        }
+      }
+      validatedState.tierDisplayConfigs = validConfigs;
+    }
+  }
+
+  // Validate numeric fields with proper type checking
+  if (state.customerCount !== undefined) {
+    const count = Number(state.customerCount);
+    if (isNaN(count) || count < 0) {
+      console.warn('Invalid customerCount in loaded state, using default');
+    } else {
+      validatedState.customerCount = Math.max(0, Math.round(count));
+    }
+  }
+
+  if (state.selectedPrice !== undefined) {
+    const price = Number(state.selectedPrice);
+    if (isNaN(price) || price < 0) {
+      console.warn('Invalid selectedPrice in loaded state, using default');
+    } else {
+      validatedState.selectedPrice = Math.max(0, price);
+    }
+  }
+
+  if (state.utilizationRate !== undefined) {
+    const rate = Number(state.utilizationRate);
+    if (isNaN(rate) || rate < 0 || rate > 1) {
+      console.warn('Invalid utilizationRate in loaded state, using default');
+    } else {
+      validatedState.utilizationRate = rate;
+    }
+  }
+
+  // Validate tierDistribution
+  if (state.tierDistribution !== undefined) {
+    if (typeof state.tierDistribution === 'object' && state.tierDistribution !== null) {
+      const validDist: Record<string, number> = {};
+      const dist = state.tierDistribution as Record<string, unknown>;
+      for (const [key, value] of Object.entries(dist)) {
+        const num = Number(value);
+        if (!isNaN(num) && num >= 0) {
+          validDist[key] = num;
+        }
+      }
+      validatedState.tierDistribution = validDist;
+    }
+  }
+
+  // Validate business type using schema
+  if (state.businessType !== undefined && state.businessType !== null) {
+    const result = BusinessTypeSchema.safeParse(state.businessType);
+    if (result.success) {
+      validatedState.businessType = result.data;
+    } else {
+      validatedState.businessType = null;
+    }
+  } else {
+    validatedState.businessType = null;
+  }
+
+  // Validate businessTypeConfidence
+  if (state.businessTypeConfidence !== undefined) {
+    const confidence = Number(state.businessTypeConfidence);
+    if (!isNaN(confidence) && confidence >= 0 && confidence <= 1) {
+      validatedState.businessTypeConfidence = confidence;
+    }
+  }
+
+  // Validate pricing model type using schema
+  if (state.pricingModelType !== undefined) {
+    const result = PricingModelTypeSchema.safeParse(state.pricingModelType);
+    if (result.success) {
+      validatedState.pricingModelType = result.data;
+    }
+  }
+
+  // Validate currency
+  if (state.currency !== undefined) {
+    const validCurrencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'AUD'];
+    if (typeof state.currency === 'string' && validCurrencies.includes(state.currency)) {
+      validatedState.currency = state.currency as CurrencyCode;
+    }
+  }
+
+  // Validate isFirstVisit
+  if (state.isFirstVisit !== undefined) {
+    validatedState.isFirstVisit = Boolean(state.isFirstVisit);
+  }
+
+  return validatedState;
 }
 
 function loadFromStorage(): Partial<PricingState> | null {

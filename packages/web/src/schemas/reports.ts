@@ -86,6 +86,16 @@ export const ReportNotesSchema = z.object({
 export type ReportNotes = z.infer<typeof ReportNotesSchema>;
 
 // ============================================================================
+// Report Settings Schema
+// ============================================================================
+
+export const ReportSettingsSchema = z.object({
+  monthlyGrowthRate: z.number().min(0).max(1).default(0.05), // 0-100% as decimal
+});
+
+export type ReportSettings = z.infer<typeof ReportSettingsSchema>;
+
+// ============================================================================
 // Report Data Schema
 // ============================================================================
 
@@ -95,6 +105,7 @@ export const ReportDataSchema = z.object({
   state: PricingStateSchema,
   notes: ReportNotesSchema,
   selectedMockup: z.string().optional(),
+  settings: ReportSettingsSchema.optional(),
 });
 
 export type ReportData = z.infer<typeof ReportDataSchema>;
@@ -180,6 +191,7 @@ export function parseReportDataSafe(data: unknown): ReportData | null {
         state: partial.state as PricingState,
         notes: (partial.notes as ReportNotes) ?? {},
         selectedMockup: partial.selectedMockup as string | undefined,
+        settings: (partial.settings as ReportSettings) ?? { monthlyGrowthRate: 0.05 },
       };
     }
 

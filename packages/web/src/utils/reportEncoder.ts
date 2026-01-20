@@ -6,16 +6,20 @@ import LZString from 'lz-string';
 import type { PricingState } from '../context/PricingContext';
 import {
   type ReportData as SchemaReportData,
+  type StakeholderType,
   isValidReportData as zodIsValidReportData,
   parseReportDataSafe,
 } from '../schemas/reports';
 
-// Re-export the type from schemas for backwards compatibility
+// Re-export the types from schemas for backwards compatibility
 export type ReportData = SchemaReportData;
+export type { StakeholderType };
 
 // Storage key prefix for localStorage
 const STORAGE_PREFIX = 'pt-report-';
 const REPORT_INDEX_KEY = 'pt-reports-index';
+const REPORT_TTL_DAYS = 30; // Reports expire after 30 days
+const REPORT_TTL_MS = REPORT_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 // ============================================================================
 // Compression-based encoding (for URL sharing)
@@ -82,14 +86,19 @@ function generateShortId(): string {
  * Store report data in localStorage and return a short ID
  */
 export function storeReport(data: ReportData): string {
+  // Clean up expired reports before storing new ones
+  cleanupExpiredReports();
+
   const id = generateShortId();
   const storageKey = STORAGE_PREFIX + id;
+  const now = Date.now();
 
   try {
-    // Store the report
+    // Store the report with TTL
     localStorage.setItem(storageKey, JSON.stringify({
       data,
-      createdAt: Date.now(),
+      createdAt: now,
+      expiresAt: now + REPORT_TTL_MS,
     }));
 
     // Update the index
@@ -97,7 +106,8 @@ export function storeReport(data: ReportData): string {
     index.push({
       id,
       projectName: data.projectName,
-      createdAt: Date.now(),
+      createdAt: now,
+      expiresAt: now + REPORT_TTL_MS,
     });
     localStorage.setItem(REPORT_INDEX_KEY, JSON.stringify(index));
 
@@ -110,7 +120,7 @@ export function storeReport(data: ReportData): string {
 
 /**
  * Retrieve report data from localStorage by ID
- * Includes Zod validation for safety
+ * Includes Zod validation for safety and expiration check
  */
 export function retrieveReport(id: string): ReportData | null {
   const storageKey = STORAGE_PREFIX + id;
@@ -118,7 +128,14 @@ export function retrieveReport(id: string): ReportData | null {
     const stored = localStorage.getItem(storageKey);
     if (!stored) return null;
 
-    const { data } = JSON.parse(stored);
+    const { data, expiresAt } = JSON.parse(stored);
+
+    // Check if report has expired
+    if (expiresAt && Date.now() > expiresAt) {
+      // Delete expired report
+      deleteStoredReport(id);
+      return null;
+    }
 
     // Use Zod-based safe parsing which handles legacy data
     const validated = parseReportDataSafe(data);
@@ -132,13 +149,42 @@ export function retrieveReport(id: string): ReportData | null {
 /**
  * Get index of all stored reports
  */
-export function getReportIndex(): { id: string; projectName: string; createdAt: number }[] {
+export function getReportIndex(): { id: string; projectName: string; createdAt: number; expiresAt?: number }[] {
   try {
     const index = localStorage.getItem(REPORT_INDEX_KEY);
     return index ? JSON.parse(index) : [];
   } catch {
     return [];
   }
+}
+
+/**
+ * Clean up expired reports from localStorage
+ */
+export function cleanupExpiredReports(): number {
+  const now = Date.now();
+  const index = getReportIndex();
+  let removedCount = 0;
+
+  // Find expired reports
+  const expiredIds = index
+    .filter(report => report.expiresAt && now > report.expiresAt)
+    .map(report => report.id);
+
+  // Delete each expired report
+  expiredIds.forEach(id => {
+    const storageKey = STORAGE_PREFIX + id;
+    localStorage.removeItem(storageKey);
+    removedCount++;
+  });
+
+  // Update index if any were removed
+  if (removedCount > 0) {
+    const updatedIndex = index.filter(report => !expiredIds.includes(report.id));
+    localStorage.setItem(REPORT_INDEX_KEY, JSON.stringify(updatedIndex));
+  }
+
+  return removedCount;
 }
 
 /**
@@ -156,8 +202,6 @@ export function deleteStoredReport(id: string): void {
 // ============================================================================
 // URL Generation
 // ============================================================================
-
-type StakeholderType = 'accountant' | 'investor' | 'engineer' | 'marketer';
 
 /**
  * Create a short URL using localStorage storage

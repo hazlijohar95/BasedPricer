@@ -117,7 +117,7 @@ export function getRateLimit(): RateLimitInfo | null {
 /**
  * Fetch repository information
  */
-export async function getRepoInfo(owner: string, repo: string): Promise<RepoInfo> {
+async function getRepoInfo(owner: string, repo: string): Promise<RepoInfo> {
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repo}`,
     { headers: getHeaders() }
@@ -152,7 +152,7 @@ export async function getRepoInfo(owner: string, repo: string): Promise<RepoInfo
 /**
  * Get repository file tree
  */
-export async function getTree(owner: string, repo: string, branch: string): Promise<TreeItem[]> {
+async function getTree(owner: string, repo: string, branch: string): Promise<TreeItem[]> {
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
     { headers: getHeaders() }
@@ -176,7 +176,7 @@ export async function getTree(owner: string, repo: string, branch: string): Prom
 /**
  * Fetch a single file's content
  */
-export async function getFileContent(
+async function getFileContent(
   owner: string,
   repo: string,
   path: string,

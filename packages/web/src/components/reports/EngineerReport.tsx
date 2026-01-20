@@ -46,14 +46,6 @@ function getFeatureAccessForTier(feature: Feature, tier: Tier): 'none' | 'unlimi
   return 'unlimited';
 }
 
-// Helper to get a specific limit from tier
-function getTierLimit(tier: Tier, featureId: string): number | string | null {
-  const limit = tier.limits?.find((l: TierLimit) => l.featureId === featureId);
-  if (!limit) return null;
-  if (limit.limit === 'unlimited') return null;
-  if (typeof limit.limit === 'boolean') return null;
-  return limit.limit;
-}
 
 export function EngineerReport({ reportData }: EngineerReportProps) {
   const { state } = reportData;
@@ -233,39 +225,39 @@ export function EngineerReport({ reportData }: EngineerReportProps) {
         </h3>
         <div className="grid grid-cols-2 gap-6 print:grid-cols-2">
           {activeTiers.map((tier: Tier) => {
-            const docsLimit = getTierLimit(tier, 'invoice_create');
-            const storageLimit = getTierLimit(tier, 'dataroom_storage');
-            const teamLimit = getTierLimit(tier, 'team_members');
-            const ocrLimit = getTierLimit(tier, 'ocr_extraction');
+            // Get all limits for this tier dynamically
+            const limits = tier.limits || [];
+            const hasLimits = limits.length > 0;
 
             return (
               <div key={tier.id} className="p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-3">{tier.name}</h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Invoices per month</span>
-                    <span className="font-medium text-gray-900">
-                      {docsLimit === null ? 'Unlimited' : docsLimit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Storage (GB)</span>
-                    <span className="font-medium text-gray-900">
-                      {storageLimit === null ? 'Unlimited' : storageLimit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Team members</span>
-                    <span className="font-medium text-gray-900">
-                      {teamLimit === null ? 'Unlimited' : teamLimit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">OCR extractions per month</span>
-                    <span className="font-medium text-gray-900">
-                      {ocrLimit === null ? 'Unlimited' : ocrLimit}
-                    </span>
-                  </div>
+                  {hasLimits ? (
+                    limits.map((limitConfig: TierLimit) => {
+                      // Find feature name from features array
+                      const feature = features.find((f: Feature) => f.id === limitConfig.featureId);
+                      const featureName = feature?.name || limitConfig.featureId.replace(/_/g, ' ');
+                      const limitValue = limitConfig.limit;
+
+                      return (
+                        <div key={limitConfig.featureId} className="flex justify-between">
+                          <span className="text-gray-500">{featureName}</span>
+                          <span className="font-medium text-gray-900">
+                            {limitValue === 'unlimited' || limitValue === true
+                              ? 'Unlimited'
+                              : limitValue === false
+                              ? 'Not available'
+                              : typeof limitValue === 'number'
+                              ? limitValue.toLocaleString()
+                              : String(limitValue)}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-400 italic">No specific limits configured</p>
+                  )}
                 </div>
               </div>
             );

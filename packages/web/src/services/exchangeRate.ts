@@ -178,88 +178,8 @@ export function getExchangeRateSync(): number {
 }
 
 /**
- * Convert USD to MYR
- */
-export function convertUsdToMyr(usd: number, rate?: number): number {
-  const exchangeRate = rate ?? getExchangeRateSync();
-  return usd * exchangeRate;
-}
-
-/**
- * Convert MYR to USD
- */
-export function convertMyrToUsd(myr: number, rate?: number): number {
-  const exchangeRate = rate ?? getExchangeRateSync();
-  return myr / exchangeRate;
-}
-
-/**
- * Force refresh the exchange rate (bypass cache)
- */
-export async function refreshExchangeRate(): Promise<number> {
-  // Clear cache
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // Ignore
-  }
-
-  const result = await getExchangeRate();
-  return result.rate;
-}
-
-/**
  * Get the fallback rate constant
  */
 export function getFallbackRate(): number {
   return FALLBACK_RATE;
-}
-
-/**
- * Check if the cached rate is stale (older than half the cache duration)
- * Useful for showing "rate may be outdated" warnings
- */
-export function isCacheStale(): boolean {
-  const cached = getCachedRate();
-  if (!cached) return true;
-
-  const age = Date.now() - cached.timestamp;
-  return age > CACHE_DURATION_MS / 2;
-}
-
-/**
- * Check if localStorage caching is available
- * Useful for detecting private browsing or storage disabled
- */
-export function isCachingAvailable(): boolean {
-  try {
-    const testKey = '__storage_test__';
-    localStorage.setItem(testKey, 'test');
-    localStorage.removeItem(testKey);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Get cache status information for debugging/display
- */
-export function getCacheStatus(): {
-  available: boolean;
-  hasCachedRate: boolean;
-  isStale: boolean;
-  age: number | null;
-  source: string | null;
-} {
-  const available = isCachingAvailable();
-  const cached = getCachedRate();
-
-  return {
-    available,
-    hasCachedRate: cached !== null,
-    isStale: isCacheStale(),
-    age: cached ? Date.now() - cached.timestamp : null,
-    source: cached?.source ?? null,
-  };
 }

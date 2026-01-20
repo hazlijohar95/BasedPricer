@@ -55,7 +55,8 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
   const [selectedStakeholders, setSelectedStakeholders] = useState<Set<StakeholderKey>>(
     new Set(['accountant', 'investor', 'engineer', 'marketer'])
   );
-  const [urlMode, setUrlMode] = useState<UrlMode>('short');
+  const [urlMode, setUrlMode] = useState<UrlMode>('portable');
+  const [monthlyGrowthRate, setMonthlyGrowthRate] = useState(5); // Percentage (0-100)
 
   // Create report data
   const reportData = useMemo((): ReportData => {
@@ -75,8 +76,15 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
       pricingModelType: pricingState.pricingModelType,
       isFirstVisit: pricingState.isFirstVisit,
     };
-    return createReportData(projectName, state, notes);
-  }, [pricingState, projectName, notes]);
+    const data = createReportData(projectName, state, notes);
+    // Add settings with growth rate
+    return {
+      ...data,
+      settings: {
+        monthlyGrowthRate: monthlyGrowthRate / 100, // Convert percentage to decimal
+      },
+    };
+  }, [pricingState, projectName, notes, monthlyGrowthRate]);
 
   // Generate URLs
   const urls = useMemo(() => {
@@ -185,12 +193,61 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
             />
           </div>
 
+          {/* Growth Rate Setting */}
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              Monthly Growth Rate
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="20"
+                step="1"
+                value={monthlyGrowthRate}
+                onChange={(e) => setMonthlyGrowthRate(Number(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#253ff6]"
+              />
+              <div className="flex items-center gap-1 min-w-[60px]">
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={monthlyGrowthRate}
+                  onChange={(e) => setMonthlyGrowthRate(Math.max(0, Math.min(50, Number(e.target.value))))}
+                  className="w-12 px-2 py-1 text-sm text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#253ff6] focus:border-transparent"
+                />
+                <span className="text-sm text-gray-500">%</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Used in P&L projections and investor metrics (0-50%)
+            </p>
+          </div>
+
           {/* URL Mode Selection */}
           <div className="mb-4 sm:mb-6">
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Link Type
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              <button
+                onClick={() => setUrlMode('portable')}
+                className={`p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
+                  urlMode === 'portable'
+                    ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
+                    : 'border-gray-200 hover:border-gray-300 active:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <Globe size={18} className={urlMode === 'portable' ? 'text-[#253ff6]' : 'text-gray-500'} />
+                  <span className="font-medium text-gray-900 text-xs sm:text-sm">Portable Link</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">
+                    Recommended
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">~{urlStats.portableUrlLength} chars • Works anywhere</p>
+              </button>
               <button
                 onClick={() => setUrlMode('short')}
                 className={`p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
@@ -202,25 +259,11 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <Desktop size={18} className={urlMode === 'short' ? 'text-[#253ff6]' : 'text-gray-500'} />
                   <span className="font-medium text-gray-900 text-xs sm:text-sm">Short Link</span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">
-                    Recommended
+                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+                    This device only
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">~{urlStats.shortUrlLength} chars • This device</p>
-              </button>
-              <button
-                onClick={() => setUrlMode('portable')}
-                className={`p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
-                  urlMode === 'portable'
-                    ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
-                    : 'border-gray-200 hover:border-gray-300 active:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Globe size={18} className={urlMode === 'portable' ? 'text-[#253ff6]' : 'text-gray-500'} />
-                  <span className="font-medium text-gray-900 text-xs sm:text-sm">Portable Link</span>
-                </div>
-                <p className="text-xs text-gray-500">~{urlStats.portableUrlLength} chars • Any device</p>
+                <p className="text-xs text-gray-500">~{urlStats.shortUrlLength} chars • Stored locally</p>
               </button>
             </div>
             <div className="mt-2 p-2 bg-gray-50 rounded-md flex items-start gap-2">

@@ -212,58 +212,6 @@ export function clearConfigCache(): void {
 // =============================================================================
 
 /**
- * Get a specific provider by ID (includes custom providers)
- */
-export async function getProviderConfig(providerId: string): Promise<ProviderConfig | null> {
-  const config = await loadProvidersConfig();
-
-  // Check built-in providers
-  if (config.providers[providerId]) {
-    return config.providers[providerId];
-  }
-
-  // Check custom providers
-  const customProvider = config.customProviders.find(p => p.id === providerId);
-  if (customProvider) {
-    return customProvider;
-  }
-
-  return null;
-}
-
-/**
- * Get all available providers (built-in + custom)
- */
-export async function getAllProviders(): Promise<ProviderConfig[]> {
-  const config = await loadProvidersConfig();
-  return [
-    ...Object.values(config.providers),
-    ...config.customProviders,
-  ];
-}
-
-/**
- * Get pricing info for a specific model
- */
-export async function getModelPricing(providerId: string, modelId?: string): Promise<ModelConfig | null> {
-  const provider = await getProviderConfig(providerId);
-  if (!provider) return null;
-
-  const targetModelId = modelId ?? provider.defaultModel;
-  return provider.models[targetModelId] ?? null;
-}
-
-/**
- * Check if pricing data is stale (older than 30 days)
- */
-export function isPricingStale(lastUpdate: string): boolean {
-  const updateDate = new Date(lastUpdate);
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  return updateDate < thirtyDaysAgo;
-}
-
-/**
  * Get freshness indicator for display
  */
 export function getPricingFreshness(lastUpdate: string): {
@@ -282,67 +230,6 @@ export function getPricingFreshness(lastUpdate: string): {
   } else {
     return { status: 'stale', label: `${daysOld} days old - may be outdated`, daysOld };
   }
-}
-
-/**
- * Build the complete system prompt from config
- */
-export async function buildSystemPrompt(): Promise<string> {
-  const config = await loadAnalysisPromptsConfig();
-  const { systemPrompt, businessTypes } = config;
-
-  // Build business type definitions
-  const businessTypeDefs = Object.entries(businessTypes)
-    .map(([id, bt]) => `- ${id}: ${bt.description} (signals: ${bt.signals.join(', ')})`)
-    .join('\n');
-
-  return `${systemPrompt.role}
-
-Key objectives:
-${systemPrompt.objectives.map((o, i) => `${i + 1}. **${o}**`).join('\n')}
-
-Business Type Definitions:
-${businessTypeDefs}
-
-Analysis guidelines:
-${systemPrompt.guidelines.map(g => `- ${g}`).join('\n')}
-
-${systemPrompt.outputInstruction}`;
-}
-
-/**
- * Build the user prompt with codebase data
- */
-export async function buildUserPrompt(data: {
-  repoName: string;
-  repoDescription: string;
-  language: string;
-  dependencies: string;
-  readme: string;
-  sourceFiles: string;
-}): Promise<string> {
-  const config = await loadAnalysisPromptsConfig();
-
-  let prompt = config.userPromptTemplate
-    .replace('{repoName}', data.repoName)
-    .replace('{repoDescription}', data.repoDescription)
-    .replace('{language}', data.language)
-    .replace('{dependencies}', data.dependencies)
-    .replace('{readme}', data.readme)
-    .replace('{sourceFiles}', data.sourceFiles);
-
-  // Replace output schema placeholder with actual schema
-  prompt = prompt.replace('{outputSchema}', JSON.stringify(config.outputSchema, null, 2));
-
-  return prompt;
-}
-
-/**
- * Get analysis settings
- */
-export async function getAnalysisSettings(): Promise<AnalysisSettings> {
-  const config = await loadAnalysisPromptsConfig();
-  return config.analysisSettings;
 }
 
 // =============================================================================
@@ -519,55 +406,4 @@ function getFallbackAnalysisPromptsConfig(): AnalysisPromptsConfig {
       maxCharsPerConfigFile: 2000,
     },
   };
-}
-
-// =============================================================================
-// EXPORTS FOR BACKWARD COMPATIBILITY
-// =============================================================================
-
-/**
- * Convert loaded config to the legacy AI_PRICING format
- * This allows gradual migration without breaking existing code
- */
-export async function getLegacyPricingFormat(): Promise<Record<string, {
-  provider: string;
-  providerName: string;
-  defaultModel: string;
-  models: Record<string, {
-    name: string;
-    displayName: string;
-    inputPricePerMillion: number;
-    outputPricePerMillion: number;
-    lastUpdated: string;
-    contextWindow: number;
-    notes?: string;
-  }>;
-}>> {
-  const config = await loadProvidersConfig();
-  const result: Record<string, unknown> = {};
-
-  for (const [id, provider] of Object.entries(config.providers)) {
-    const models: Record<string, unknown> = {};
-
-    for (const [modelId, model] of Object.entries(provider.models)) {
-      models[modelId] = {
-        name: model.id,
-        displayName: model.name,
-        inputPricePerMillion: model.inputPricePerMillion,
-        outputPricePerMillion: model.outputPricePerMillion,
-        lastUpdated: model.lastPriceUpdate ?? config._meta.lastUpdated,
-        contextWindow: model.contextWindow ?? 128000,
-        notes: model.notes,
-      };
-    }
-
-    result[id] = {
-      provider: id,
-      providerName: provider.name,
-      defaultModel: provider.defaultModel,
-      models,
-    };
-  }
-
-  return result as ReturnType<typeof getLegacyPricingFormat> extends Promise<infer T> ? T : never;
 }

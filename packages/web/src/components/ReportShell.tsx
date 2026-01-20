@@ -9,11 +9,12 @@ import {
   Check,
   Download,
   ArrowLeft,
+  Spinner,
 } from '@phosphor-icons/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { ReportData } from '../utils/reportEncoder';
-
-type StakeholderType = 'accountant' | 'investor' | 'engineer' | 'marketer';
+import type { StakeholderType } from '../schemas/reports';
+import html2pdf from 'html2pdf.js';
 
 interface ReportShellProps {
   reportData: ReportData;
@@ -63,6 +64,8 @@ const stakeholderOrder: StakeholderType[] = ['accountant', 'investor', 'engineer
 
 export function ReportShell({ reportData, stakeholder, encodedData, children }: ReportShellProps) {
   const [copied, setCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   const config = stakeholderConfig[stakeholder];
   const Icon = config.icon;
   const location = useLocation();
@@ -96,9 +99,40 @@ export function ReportShell({ reportData, stakeholder, encodedData, children }: 
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleDownloadPdf = useCallback(async () => {
+    if (!contentRef.current || isGeneratingPdf) return;
+
+    setIsGeneratingPdf(true);
+    try {
+      const element = contentRef.current;
+      const filename = `${reportData.projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${stakeholder}-report.pdf`;
+
+      const opt = {
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+        },
+        jsPDF: {
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const,
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      // Fallback to browser print
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [isGeneratingPdf, reportData.projectName, stakeholder]);
 
   const createdDate = new Date(reportData.createdAt).toLocaleDateString('en-MY', {
     year: 'numeric',
@@ -154,10 +188,23 @@ export function ReportShell({ reportData, stakeholder, encodedData, children }: 
                 )}
               </button>
               <button
-                onClick={handlePrint}
-                className="px-3 py-1.5 rounded text-sm font-medium bg-[#253ff6] text-white hover:bg-[#1a2eb8] transition-colors flex items-center gap-1.5"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isGeneratingPdf
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[#253ff6] text-white hover:bg-[#1a2eb8]'
+                }`}
               >
-                <Download size={14} /> Download PDF
+                {isGeneratingPdf ? (
+                  <>
+                    <Spinner size={14} className="animate-spin" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} /> Download PDF
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -189,6 +236,7 @@ export function ReportShell({ reportData, stakeholder, encodedData, children }: 
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-8">
+        <div ref={contentRef} className="pdf-content">
         {/* Report Meta */}
         <div className={`mb-6 p-4 rounded-lg border ${config.bgColor} ${config.borderColor}`}>
           <div className="flex items-center justify-between">
@@ -216,6 +264,7 @@ export function ReportShell({ reportData, stakeholder, encodedData, children }: 
 
         {/* Report Content */}
         {children}
+        </div>
       </main>
 
       {/* Footer */}
