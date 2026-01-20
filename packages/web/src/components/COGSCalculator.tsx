@@ -84,60 +84,62 @@ export function COGSCalculator() {
   return (
     <div className="min-h-[calc(100vh-64px)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">COGS Calculator</h1>
-          <p className="text-gray-500 text-sm mt-1">Build your cost model to find the right price</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">COGS Calculator</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Build your cost model to find the right price</p>
         </div>
       </div>
 
       {/* What is COGS + Presets */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+      <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0 hidden sm:block" />
           <div className="flex-1">
             <p className="text-sm text-blue-900 font-medium mb-1">What goes into COGS?</p>
-            <p className="text-xs text-blue-700 mb-3">
-              COGS (Cost of Goods Sold) = costs that scale with customers. Include: <strong>Variable costs</strong> (per-action costs like API calls, storage, emails) + <strong>Fixed costs</strong> (infrastructure shared by all customers). Don't include: salaries, marketing, office rent.
+            <p className="text-xs text-blue-700 mb-3 leading-relaxed">
+              COGS = costs that scale with customers. Include: <strong>Variable costs</strong> (API calls, storage) + <strong>Fixed costs</strong> (shared infrastructure).
             </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-blue-600">Load template:</span>
-              {Object.entries(COST_PRESETS).map(([key, preset]) => (
-                <button
-                  key={key}
-                  onClick={() => handleLoadPreset(key as CostPresetKey)}
-                  className={`text-xs px-2 py-1 rounded transition-colors ${
-                    selectedPresetKey === key
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-blue-700 hover:bg-blue-100 border border-blue-200'
-                  }`}
-                >
-                  {preset.name}
-                </button>
-              ))}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span className="text-xs text-blue-600 font-medium">Load template:</span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {Object.entries(COST_PRESETS).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleLoadPreset(key as CostPresetKey)}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg transition-colors touch-manipulation ${
+                      selectedPresetKey === key
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-700 hover:bg-blue-100 active:bg-blue-200 border border-blue-200'
+                    }`}
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Usage Mode Toggle */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">View costs at:</span>
-          <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-[0.2rem]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <span className="text-xs sm:text-sm text-gray-500">View costs at:</span>
+          <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-lg">
             <button
               onClick={() => setShowRealisticUsage(false)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-[0.2rem] transition-all duration-200 ${
+              className={`px-3 py-2 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 touch-manipulation ${
                 !showRealisticUsage
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Max usage (100%)
+              Max (100%)
             </button>
             <button
               onClick={() => setShowRealisticUsage(true)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-[0.2rem] transition-all duration-200 ${
+              className={`px-3 py-2 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 touch-manipulation ${
                 showRealisticUsage
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -148,15 +150,10 @@ export function COGSCalculator() {
           </div>
         </div>
         {showRealisticUsage && (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 group relative">
+          <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+            <div className="flex items-center gap-1.5">
               <Gauge size={16} weight="duotone" className="text-gray-400" />
-              <span className="text-xs text-gray-500">Avg. usage</span>
-              <Info size={12} className="text-gray-300 cursor-help" />
-              <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                <p className="font-medium mb-1">Average Usage Rate</p>
-                <p className="text-gray-300">Accounts for the fact that most customers don't use 100% of their allocated resources. Lower values mean lower actual costs per customer.</p>
-              </div>
+              <span className="text-xs text-gray-500">Usage</span>
             </div>
             <input
               type="range"
@@ -165,7 +162,7 @@ export function COGSCalculator() {
               step="0.05"
               value={utilizationRate}
               onChange={(e) => setUtilizationRate(Number(e.target.value))}
-              className="w-24 accent-[#253ff6]"
+              className="flex-1 sm:w-24 accent-[#253ff6]"
             />
             <span className="text-sm font-mono text-gray-600 w-10">{(utilizationRate * 100).toFixed(0)}%</span>
           </div>
@@ -173,23 +170,23 @@ export function COGSCalculator() {
       </div>
 
       {/* Main Results */}
-      <div className="grid grid-cols-3 gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-4 sm:mb-6">
         {/* COGS Result */}
-        <div className="col-span-2 bg-white border border-gray-200 rounded-lg p-6">
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-500 text-sm">Your cost per customer / month</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Your cost per customer / month</p>
             {showRealisticUsage && (
-              <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded">
-                @ {(utilizationRate * 100).toFixed(0)}% utilization
+              <span className="text-[10px] sm:text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded">
+                @ {(utilizationRate * 100).toFixed(0)}% util
               </span>
             )}
           </div>
-          <p className="text-5xl font-semibold text-gray-900 tracking-tight">
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 tracking-tight">
             MYR {displayCosts.totalCOGS.toFixed(2)}
           </p>
 
           {/* Breakdown bar */}
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <div className="relative h-1.5 rounded-full overflow-hidden bg-gray-100">
               <div
                 className="absolute left-0 top-0 h-full bg-[#253ff6] transition-all duration-500"
@@ -203,7 +200,7 @@ export function COGSCalculator() {
                 }}
               />
             </div>
-            <div className="flex justify-between mt-3 text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mt-3 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#253ff6]" />
                 <span className="text-gray-400">Variable</span>
@@ -219,12 +216,12 @@ export function COGSCalculator() {
         </div>
 
         {/* Margin */}
-        <div className={`rounded-lg p-6 border ${marginStyle.bg} border-gray-200`}>
-          <p className="text-gray-500 text-sm mb-2">Margin at MYR {selectedPrice}</p>
-          <p className={`text-5xl font-semibold tracking-tight ${marginStyle.text}`}>
+        <div className={`rounded-lg p-4 sm:p-6 border ${marginStyle.bg} border-gray-200`}>
+          <p className="text-gray-500 text-xs sm:text-sm mb-2">Margin at MYR {selectedPrice}</p>
+          <p className={`text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight ${marginStyle.text}`}>
             {displayMargin.toFixed(0)}%
           </p>
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <div className="relative h-1.5 rounded-full bg-gray-200 overflow-hidden">
               <div
                 className="absolute left-0 top-0 h-full bg-[#253ff6] transition-all duration-500"
@@ -238,33 +235,33 @@ export function COGSCalculator() {
               <span>100%</span>
             </div>
           </div>
-          <p className={`text-sm mt-4 ${marginStyle.text}`}>
+          <p className={`text-xs sm:text-sm mt-3 sm:mt-4 ${marginStyle.text}`}>
             {displayProfit >= 0 ? '+' : ''}MYR {displayProfit.toFixed(2)} profit/customer
           </p>
         </div>
       </div>
 
       {/* Editable Costs */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Variable Costs */}
-        <div className="col-span-2 bg-white border border-gray-200 rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
               <h3 className="text-sm font-medium text-gray-900">Variable Costs</h3>
-              <p className="text-xs text-gray-500">Costs that scale with usage (per customer/month)</p>
+              <p className="text-xs text-gray-500 hidden sm:block">Costs that scale with usage (per customer/month)</p>
             </div>
             <button
               onClick={addVariableCost}
-              className="flex items-center gap-1 text-xs text-[#253ff6] hover:text-[#1a2eb8] transition-colors"
+              className="flex items-center gap-1 text-xs text-[#253ff6] hover:text-[#1a2eb8] transition-colors px-2 py-1.5 rounded-lg hover:bg-blue-50 touch-manipulation"
             >
               <Plus size={14} />
-              Add item
+              Add
             </button>
           </div>
 
           <div className="space-y-2">
-            {/* Header */}
-            <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-500 uppercase tracking-wide px-2">
+            {/* Desktop Header - hidden on mobile */}
+            <div className="hidden sm:grid grid-cols-12 gap-2 text-[10px] text-gray-500 uppercase tracking-wide px-2">
               <div className="col-span-3">Cost item</div>
               <div className="col-span-2 text-right">Usage</div>
               <div className="col-span-2">Unit</div>
@@ -274,72 +271,128 @@ export function COGSCalculator() {
             </div>
 
             {variableCosts.map((item) => (
-              <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-2 px-2 bg-gray-50 rounded group">
-                <div className="col-span-3">
-                  {editingItem === item.id ? (
+              <div key={item.id} className="group">
+                {/* Mobile Card Layout */}
+                <div className="sm:hidden bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
                     <input
                       type="text"
                       value={item.name}
                       onChange={(e) => updateVariableCost(item.id, 'name', e.target.value)}
-                      onBlur={() => setEditingItem(null)}
-                      autoFocus
-                      className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      className="text-sm font-medium text-gray-900 bg-transparent border-b border-transparent focus:border-[#253ff6] focus:outline-none flex-1 mr-2"
                     />
-                  ) : (
                     <button
-                      onClick={() => setEditingItem(item.id)}
-                      className="text-sm text-gray-700 hover:text-[#253ff6] text-left flex items-center gap-1"
+                      onClick={() => removeVariableCost(item.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 touch-manipulation"
                     >
-                      {item.name}
-                      <PencilSimple size={10} className="opacity-0 group-hover:opacity-50" />
+                      <X size={16} />
                     </button>
-                  )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase">Usage</label>
+                      <input
+                        type="number"
+                        value={item.usagePerCustomer}
+                        onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Number(e.target.value))}
+                        className="w-full text-sm bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase">Unit</label>
+                      <input
+                        type="text"
+                        value={item.unit}
+                        onChange={(e) => updateVariableCost(item.id, 'unit', e.target.value)}
+                        className="w-full text-sm bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase">Cost</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        value={item.costPerUnit}
+                        onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Number(e.target.value))}
+                        className="w-full text-sm font-mono bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1 border-t border-gray-200">
+                    <span className="text-sm font-semibold text-gray-900">
+                      = MYR {(item.costPerUnit * item.usagePerCustomer).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="col-span-2">
-                  <input
-                    type="number"
-                    value={item.usagePerCustomer}
-                    onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Number(e.target.value))}
-                    className="w-full text-sm text-right bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <input
-                    type="text"
-                    value={item.unit}
-                    onChange={(e) => updateVariableCost(item.id, 'unit', e.target.value)}
-                    className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#253ff6] focus:outline-none px-1 py-1"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={item.costPerUnit}
-                    onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Number(e.target.value))}
-                    className="w-full text-sm text-right font-mono bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
-                  />
-                </div>
-                <div className="col-span-2 text-right">
-                  <span className="text-sm font-medium text-gray-900">
-                    {(item.costPerUnit * item.usagePerCustomer).toFixed(2)}
-                  </span>
-                </div>
-                <div className="col-span-1 text-right">
-                  <button
-                    onClick={() => removeVariableCost(item.id)}
-                    className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={14} />
-                  </button>
+
+                {/* Desktop Row Layout */}
+                <div className="hidden sm:grid grid-cols-12 gap-2 items-center py-2 px-2 bg-gray-50 rounded">
+                  <div className="col-span-3">
+                    {editingItem === item.id ? (
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => updateVariableCost(item.id, 'name', e.target.value)}
+                        onBlur={() => setEditingItem(null)}
+                        autoFocus
+                        className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setEditingItem(item.id)}
+                        className="text-sm text-gray-700 hover:text-[#253ff6] text-left flex items-center gap-1"
+                      >
+                        {item.name}
+                        <PencilSimple size={10} className="opacity-0 group-hover:opacity-50" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <input
+                      type="number"
+                      value={item.usagePerCustomer}
+                      onChange={(e) => updateVariableCost(item.id, 'usagePerCustomer', Number(e.target.value))}
+                      className="w-full text-sm text-right bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      value={item.unit}
+                      onChange={(e) => updateVariableCost(item.id, 'unit', e.target.value)}
+                      className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#253ff6] focus:outline-none px-1 py-1"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={item.costPerUnit}
+                      onChange={(e) => updateVariableCost(item.id, 'costPerUnit', Number(e.target.value))}
+                      className="w-full text-sm text-right font-mono bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                    />
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <span className="text-sm font-medium text-gray-900">
+                      {(item.costPerUnit * item.usagePerCustomer).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="col-span-1 text-right">
+                    <button
+                      onClick={() => removeVariableCost(item.id)}
+                      className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
 
             {/* Total */}
             <div className="flex justify-between items-center pt-3 mt-2 border-t border-gray-200 px-2">
-              <span className="text-sm font-medium text-gray-700">
-                Total variable per customer
+              <span className="text-xs sm:text-sm font-medium text-gray-700">
+                Total variable
                 {showRealisticUsage && <span className="text-xs text-gray-500 ml-1">@ {(utilizationRate * 100).toFixed(0)}%</span>}
               </span>
               <span className="text-sm font-semibold text-[#253ff6]">MYR {displayCosts.variableTotal.toFixed(2)}</span>
@@ -348,9 +401,9 @@ export function COGSCalculator() {
         </div>
 
         {/* Right column: Fixed + Price */}
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {/* Fixed Costs */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Fixed Costs</h3>
@@ -358,34 +411,34 @@ export function COGSCalculator() {
               </div>
               <button
                 onClick={addFixedCost}
-                className="flex items-center gap-1 text-xs text-[#253ff6] hover:text-[#1a2eb8]"
+                className="flex items-center gap-1 text-xs text-[#253ff6] hover:text-[#1a2eb8] active:text-[#1a2eb8] px-2 py-1.5 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-colors touch-manipulation"
               >
-                <Plus size={12} />
+                <Plus size={14} />
                 Add
               </button>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {fixedCosts.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-1 group">
+                <div key={item.id} className="flex items-center justify-between py-2 px-2 bg-gray-50 rounded-lg group">
                   <input
                     type="text"
                     value={item.name}
                     onChange={(e) => updateFixedCost(item.id, 'name', e.target.value)}
-                    className="text-xs text-gray-600 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#253ff6] focus:outline-none flex-1 mr-2"
+                    className="text-xs sm:text-sm text-gray-600 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#253ff6] focus:outline-none flex-1 mr-2"
                   />
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={item.monthlyCost}
                       onChange={(e) => updateFixedCost(item.id, 'monthlyCost', Number(e.target.value))}
-                      className="w-16 text-xs text-right font-mono bg-gray-50 border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
+                      className="w-20 sm:w-16 text-xs sm:text-sm text-right font-mono bg-white border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#253ff6]"
                     />
                     <button
                       onClick={() => removeFixedCost(item.id)}
-                      className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-gray-400 hover:text-red-500 active:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation"
                     >
-                      <X size={12} />
+                      <X size={14} />
                     </button>
                   </div>
                 </div>
@@ -399,7 +452,7 @@ export function COGSCalculator() {
 
             {/* Customer count */}
             <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-500">Customers</span>
                 <span className="text-sm font-medium text-gray-900">{customerCount}</span>
               </div>
@@ -410,16 +463,16 @@ export function COGSCalculator() {
                 step="10"
                 value={customerCount}
                 onChange={(e) => setCustomerCount(Number(e.target.value))}
-                className="w-full h-1 bg-gray-100 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gray-400 [&::-webkit-slider-thumb]:cursor-pointer"
+                className="w-full h-2 bg-gray-100 rounded-full appearance-none cursor-pointer accent-[#253ff6] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#253ff6] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
               />
-              <p className="text-[10px] text-gray-500 mt-1">Fixed ÷ customers = MYR {costs.fixedPerCustomer.toFixed(2)}/ea</p>
+              <p className="text-[10px] text-gray-500 mt-1.5">Fixed ÷ customers = MYR {costs.fixedPerCustomer.toFixed(2)}/ea</p>
             </div>
           </div>
 
           {/* Price Points */}
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Price Point</h3>
-            <div className="space-y-1">
+            <div className="space-y-1.5 sm:space-y-1">
               {[15, 20, 25, 30, 38, 50, 78, 100].map((price) => {
                 const m = ((price - displayCosts.totalCOGS) / price) * 100;
                 const style = getMarginStyle(m);
@@ -429,12 +482,12 @@ export function COGSCalculator() {
                   <button
                     key={price}
                     onClick={() => setSelectedPrice(price)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded transition-all ${
-                      isSelected ? 'bg-gray-900 text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                    className={`w-full flex items-center justify-between px-3 py-2.5 sm:px-2.5 sm:py-2 rounded-lg sm:rounded transition-all touch-manipulation active:scale-[0.98] ${
+                      isSelected ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : style.dot}`} />
+                      <span className={`w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${isSelected ? 'bg-white' : style.dot}`} />
                       <span className="font-mono text-sm">MYR {price}</span>
                     </div>
                     <span className={`text-sm font-medium ${isSelected ? 'text-white' : style.text}`}>
@@ -449,11 +502,17 @@ export function COGSCalculator() {
       </div>
 
       {/* Formula */}
-      <div className="mt-5 p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs text-gray-500">
-        <span className="font-medium text-gray-700">Formula:</span>{' '}
-        <span className="font-mono">COGS = Σ(usage × cost{showRealisticUsage ? ` × ${(utilizationRate * 100).toFixed(0)}%` : ''}) + (fixed ÷ customers)</span>{' '}
-        = {displayCosts.variableTotal.toFixed(2)} + ({displayCosts.fixedTotal.toFixed(0)} ÷ {customerCount}){' '}
-        = <strong className="text-gray-900">MYR {displayCosts.totalCOGS.toFixed(2)}</strong>
+      <div className="mt-4 sm:mt-5 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="text-xs text-gray-500">
+          <span className="font-medium text-gray-700">Formula:</span>{' '}
+          <span className="font-mono text-[11px] sm:text-xs break-words">
+            COGS = Σ(usage × cost{showRealisticUsage ? ` × ${(utilizationRate * 100).toFixed(0)}%` : ''}) + (fixed ÷ customers)
+          </span>
+        </div>
+        <div className="text-xs text-gray-500 mt-1.5 sm:mt-1">
+          = {displayCosts.variableTotal.toFixed(2)} + ({displayCosts.fixedTotal.toFixed(0)} ÷ {customerCount}){' '}
+          = <strong className="text-gray-900">MYR {displayCosts.totalCOGS.toFixed(2)}</strong>
+        </div>
       </div>
     </div>
   );

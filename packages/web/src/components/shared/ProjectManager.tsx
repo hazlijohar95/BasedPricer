@@ -82,7 +82,7 @@ export function ProjectManager() {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Current Project Display */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {isEditing ? (
           <input
             ref={inputRef}
@@ -97,34 +97,34 @@ export function ProjectManager() {
                 setIsEditing(false);
               }
             }}
-            className="text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#253ff6]/20"
+            className="text-xs sm:text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#253ff6]/20 touch-manipulation"
           />
         ) : (
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 active:text-gray-900 transition-colors touch-manipulation"
           >
-            <Folder size={16} weight="duotone" className="text-gray-400" />
-            <span className="max-w-[150px] truncate">{currentProjectName}</span>
+            <Folder size={14} weight="duotone" className="text-gray-400 sm:w-4 sm:h-4" />
+            <span className="max-w-[100px] sm:max-w-[150px] truncate">{currentProjectName}</span>
             <CaretDown size={12} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}
 
         {!isEditing && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <button
               onClick={() => {
                 setEditName(currentProjectName);
                 setIsEditing(true);
               }}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              className="p-2 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-100 rounded transition-colors touch-manipulation"
               title="Rename project"
             >
               <PencilSimple size={14} />
             </button>
             <button
               onClick={handleSave}
-              className="p-1.5 text-gray-400 hover:text-[#253ff6] hover:bg-[rgba(37,63,246,0.08)] rounded transition-colors"
+              className="p-2 sm:p-1.5 text-gray-400 hover:text-[#253ff6] hover:bg-[rgba(37,63,246,0.08)] active:bg-[rgba(37,63,246,0.08)] rounded transition-colors touch-manipulation"
               title="Save project"
             >
               <FloppyDisk size={14} />
@@ -135,12 +135,12 @@ export function ProjectManager() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute top-full left-0 sm:left-0 right-0 sm:right-auto mt-2 w-full sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
           {/* Save as New */}
           {!showSaveNew ? (
             <button
               onClick={() => setShowSaveNew(true)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#253ff6] hover:bg-[rgba(37,63,246,0.04)] border-b border-gray-100"
+              className="w-full flex items-center gap-2 px-3 py-3 sm:py-2.5 text-sm text-[#253ff6] hover:bg-[rgba(37,63,246,0.04)] active:bg-[rgba(37,63,246,0.04)] border-b border-gray-100 touch-manipulation"
             >
               <Plus size={16} />
               Save as New Project
@@ -153,7 +153,7 @@ export function ProjectManager() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder="Project name..."
-                  className="flex-1 text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#253ff6]/20"
+                  className="flex-1 text-sm border border-gray-200 rounded px-2 py-2 sm:py-1.5 focus:outline-none focus:ring-2 focus:ring-[#253ff6]/20 touch-manipulation"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveNew();
                     if (e.key === 'Escape') {
@@ -166,7 +166,7 @@ export function ProjectManager() {
                 <button
                   onClick={handleSaveNew}
                   disabled={!newProjectName.trim()}
-                  className="px-2 py-1.5 bg-[#253ff6] text-white text-sm rounded hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-2 sm:py-1.5 bg-[#253ff6] text-white text-sm rounded hover:bg-[#1d4ed8] active:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 >
                   <Check size={14} />
                 </button>
@@ -182,7 +182,7 @@ export function ProjectManager() {
               projects.map((name) => (
                 <div
                   key={name}
-                  className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer group"
+                  className="flex items-center justify-between px-3 py-3 sm:py-2 hover:bg-gray-50 active:bg-gray-50 cursor-pointer group touch-manipulation"
                   onClick={() => handleLoadProject(name)}
                   role="button"
                   tabIndex={0}
@@ -191,7 +191,7 @@ export function ProjectManager() {
                   <span className="text-sm text-gray-700 truncate flex-1" title={name}>{name}</span>
                   <button
                     onClick={(e) => handleDeleteProject(name, e)}
-                    className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-2 sm:p-1 text-gray-300 hover:text-red-500 active:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all touch-manipulation"
                     title="Delete project"
                   >
                     <Trash size={14} />

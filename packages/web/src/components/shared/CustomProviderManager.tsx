@@ -55,17 +55,17 @@ export function CustomProviderManager({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h3 className="font-medium text-gray-900">Custom Providers</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="font-medium text-gray-900 text-sm sm:text-base">Custom Providers</h3>
+          <p className="text-xs sm:text-sm text-gray-500">
             Add OpenAI-compatible endpoints (self-hosted LLMs, proxies, etc.)
           </p>
         </div>
         {!isAddingNew && (
           <button
             onClick={() => setIsAddingNew(true)}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-lg bg-blue-600 px-3 py-2 sm:py-1.5 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-700 touch-manipulation w-full sm:w-auto"
           >
             Add Provider
           </button>
@@ -78,7 +78,7 @@ export function CustomProviderManager({
           {customProviders.map(provider => (
             <div
               key={provider.id}
-              className="rounded-lg border border-gray-200 bg-white p-4"
+              className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4"
             >
               {editingId === provider.id ? (
                 <ProviderForm
@@ -87,24 +87,24 @@ export function CustomProviderManager({
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{provider.name}</h4>
-                    <p className="text-sm text-gray-500">{provider.baseUrl}</p>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-gray-900 text-sm sm:text-base">{provider.name}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{provider.baseUrl}</p>
                     <p className="mt-1 text-xs text-gray-400">
                       {Object.keys(provider.models).length} model(s) · Default: {provider.defaultModel}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3 sm:gap-2">
                     <button
                       onClick={() => setEditingId(provider.id)}
-                      className="text-sm text-blue-600 hover:text-blue-700"
+                      className="text-sm text-blue-600 hover:text-blue-700 active:text-blue-700 touch-manipulation px-2 py-1"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleRemove(provider.id)}
-                      className="text-sm text-red-600 hover:text-red-700"
+                      className="text-sm text-red-600 hover:text-red-700 active:text-red-700 touch-manipulation px-2 py-1"
                     >
                       Remove
                     </button>
@@ -118,8 +118,8 @@ export function CustomProviderManager({
 
       {/* Add new provider form */}
       {isAddingNew && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <h4 className="mb-3 font-medium text-blue-900">Add Custom Provider</h4>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 sm:p-4">
+          <h4 className="mb-3 font-medium text-blue-900 text-sm sm:text-base">Add Custom Provider</h4>
           <ProviderForm
             onSave={handleSave}
             onCancel={() => setIsAddingNew(false)}
@@ -129,11 +129,11 @@ export function CustomProviderManager({
 
       {/* Empty state */}
       {customProviders.length === 0 && !isAddingNew && (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-          <ServerIcon className="mx-auto h-8 w-8 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-600">No custom providers configured</p>
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:p-6 text-center">
+          <ServerIcon className="mx-auto h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+          <p className="mt-2 text-xs sm:text-sm text-gray-600">No custom providers configured</p>
           <p className="mt-1 text-xs text-gray-500">
-            Add your own OpenAI-compatible endpoints like Ollama, vLLM, or private APIs
+            Add OpenAI-compatible endpoints
           </p>
         </div>
       )}
@@ -146,7 +146,7 @@ export function CustomProviderManager({
           <li>Authorization: Bearer {"<your-api-key>"}</li>
           <li>Standard messages array format</li>
         </ul>
-        <p className="mt-2">
+        <p className="mt-2 hidden sm:block">
           Popular compatible providers: Ollama, vLLM, LM Studio, LocalAI, Together AI, Groq, Fireworks AI
         </p>
       </div>
@@ -240,9 +240,9 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Basic info */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Provider Name
           </label>
           <input
@@ -250,7 +250,7 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="e.g., My Ollama Server"
-            className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm ${
+            className={`mt-1 block w-full rounded-md border px-3 py-2.5 sm:py-2 text-sm touch-manipulation ${
               errors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
             }`}
           />
@@ -258,7 +258,7 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Base URL
           </label>
           <input
@@ -266,12 +266,12 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
             value={baseUrl}
             onChange={e => setBaseUrl(e.target.value)}
             placeholder="e.g., http://localhost:11434/v1"
-            className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm ${
+            className={`mt-1 block w-full rounded-md border px-3 py-2.5 sm:py-2 text-sm touch-manipulation ${
               errors.baseUrl ? 'border-red-300 bg-red-50' : 'border-gray-300'
             }`}
           />
           {errors.baseUrl && <p className="mt-1 text-xs text-red-600">{errors.baseUrl}</p>}
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 hidden sm:block">
             Full URL to OpenAI-compatible API (should end with /v1 or similar)
           </p>
         </div>
@@ -280,11 +280,11 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
       {/* Models */}
       <div>
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-700">Models</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">Models</label>
           <button
             type="button"
             onClick={addModel}
-            className="text-sm text-blue-600 hover:text-blue-700"
+            className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 active:text-blue-700 touch-manipulation p-1"
           >
             + Add Model
           </button>
@@ -293,15 +293,15 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
 
         <div className="mt-2 space-y-3">
           {models.map((model, index) => (
-            <div key={index} className="rounded-md border border-gray-200 bg-white p-3">
-              <div className="grid gap-3 sm:grid-cols-4">
+            <div key={index} className="rounded-md border border-gray-200 bg-white p-2.5 sm:p-3">
+              <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-4">
                 <div>
                   <input
                     type="text"
                     value={model.id}
                     onChange={e => updateModel(index, { id: e.target.value })}
                     placeholder="Model ID"
-                    className={`block w-full rounded border px-2 py-1 text-sm ${
+                    className={`block w-full rounded border px-2 py-1.5 text-sm touch-manipulation ${
                       errors[`model_${index}_id`] ? 'border-red-300' : 'border-gray-200'
                     }`}
                   />
@@ -313,7 +313,7 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
                     value={model.name}
                     onChange={e => updateModel(index, { name: e.target.value })}
                     placeholder="Display Name"
-                    className={`block w-full rounded border px-2 py-1 text-sm ${
+                    className={`block w-full rounded border px-2 py-1.5 text-sm touch-manipulation ${
                       errors[`model_${index}_name`] ? 'border-red-300' : 'border-gray-200'
                     }`}
                   />
@@ -327,7 +327,7 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
                     value={model.inputPricePerMillion}
                     onChange={e => updateModel(index, { inputPricePerMillion: parseFloat(e.target.value) || 0 })}
                     placeholder="0.00"
-                    className="block w-full rounded border border-gray-200 px-2 py-1 text-sm"
+                    className="block w-full rounded border border-gray-200 px-2 py-1.5 text-sm touch-manipulation"
                   />
                   <span className="text-xs text-gray-500">$/1M input</span>
                 </div>
@@ -340,14 +340,14 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
                       value={model.outputPricePerMillion}
                       onChange={e => updateModel(index, { outputPricePerMillion: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
-                      className="block w-full rounded border border-gray-200 px-2 py-1 text-sm"
+                      className="block w-full rounded border border-gray-200 px-2 py-1.5 text-sm touch-manipulation"
                     />
                     <span className="text-xs text-gray-500">$/1M output</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeModel(index)}
-                    className="self-start p-1 text-red-500 hover:text-red-600"
+                    className="self-start p-2 sm:p-1 text-red-500 hover:text-red-600 active:text-red-600 touch-manipulation"
                   >
                     <TrashIcon className="h-4 w-4" />
                   </button>
@@ -361,13 +361,13 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
       {/* Default model selector */}
       {models.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700">
             Default Model
           </label>
           <select
             value={defaultModel}
             onChange={e => setDefaultModel(e.target.value)}
-            className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm ${
+            className={`mt-1 block w-full rounded-md border px-3 py-2.5 sm:py-2 text-sm touch-manipulation ${
               errors.defaultModel ? 'border-red-300 bg-red-50' : 'border-gray-300'
             }`}
           >
@@ -383,17 +383,17 @@ function ProviderForm({ initialProvider, onSave, onCancel }: ProviderFormProps) 
       )}
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-gray-300 px-4 py-2.5 sm:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-50 touch-manipulation"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-blue-600 px-4 py-2.5 sm:py-2 text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-700 touch-manipulation"
         >
           {initialProvider ? 'Save Changes' : 'Add Provider'}
         </button>
@@ -478,7 +478,7 @@ export function QuickAddPresets({ onAdd }: { onAdd: (provider: ProviderConfig) =
         <button
           key={preset.name}
           onClick={() => onAdd(preset.provider as ProviderConfig)}
-          className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50"
+          className="rounded-full border border-gray-200 bg-white px-3 py-1.5 sm:py-1 text-xs font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 active:bg-blue-50 touch-manipulation"
         >
           + {preset.name}
         </button>

@@ -149,87 +149,87 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal */}
-      <div ref={modalRef} className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div ref={modalRef} className="relative bg-white rounded-t-xl sm:rounded-lg shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <Link size={20} weight="duotone" className="text-[#253ff6]" />
-            <h2 className="text-lg font-semibold text-gray-900">Generate Shareable Reports</h2>
+            <Link size={18} weight="duotone" className="text-[#253ff6] sm:w-5 sm:h-5" />
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Generate Reports</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-2 sm:p-1 hover:bg-gray-100 active:bg-gray-100 rounded transition-colors touch-manipulation"
           >
             <X size={20} className="text-gray-500" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-140px)]">
           {/* Project Name */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Project Name
             </label>
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#253ff6] focus:border-transparent"
+              className="w-full px-3 py-2.5 sm:py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#253ff6] focus:border-transparent touch-manipulation"
               placeholder="Enter project name..."
             />
           </div>
 
           {/* URL Mode Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Link Type
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <button
                 onClick={() => setUrlMode('short')}
-                className={`p-3 rounded-md border-2 text-left transition-all ${
+                className={`p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
                   urlMode === 'short'
                     ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200 hover:border-gray-300 active:border-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <Desktop size={18} className={urlMode === 'short' ? 'text-[#253ff6]' : 'text-gray-500'} />
-                  <span className="font-medium text-gray-900 text-sm">Short Link</span>
+                  <span className="font-medium text-gray-900 text-xs sm:text-sm">Short Link</span>
                   <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">
                     Recommended
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">~{urlStats.shortUrlLength} chars • Works on this device</p>
+                <p className="text-xs text-gray-500">~{urlStats.shortUrlLength} chars • This device</p>
               </button>
               <button
                 onClick={() => setUrlMode('portable')}
-                className={`p-3 rounded-md border-2 text-left transition-all ${
+                className={`p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
                   urlMode === 'portable'
                     ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200 hover:border-gray-300 active:border-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Globe size={18} className={urlMode === 'portable' ? 'text-[#253ff6]' : 'text-gray-500'} />
-                  <span className="font-medium text-gray-900 text-sm">Portable Link</span>
+                  <span className="font-medium text-gray-900 text-xs sm:text-sm">Portable Link</span>
                 </div>
-                <p className="text-xs text-gray-500">~{urlStats.portableUrlLength} chars • Works anywhere</p>
+                <p className="text-xs text-gray-500">~{urlStats.portableUrlLength} chars • Any device</p>
               </button>
             </div>
             <div className="mt-2 p-2 bg-gray-50 rounded-md flex items-start gap-2">
               <Info size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-gray-500">
                 {urlMode === 'short' ? (
-                  <>Short links are stored locally in your browser. They're clean and easy to share, but only work when opened from this device.</>
+                  <>Short links are stored locally. Easy to share but only work on this device.</>
                 ) : (
-                  <>Portable links embed all data in the URL. They work on any device but are longer ({urlStats.compressionRatio}% compressed).</>
+                  <>Portable links embed all data. Work anywhere but longer ({urlStats.compressionRatio}% compressed).</>
                 )}
               </p>
             </div>
@@ -239,13 +239,11 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
                 <p className="text-xs text-amber-700">
                   {urlStats.portableUrlLength > 8000 ? (
                     <>
-                      <strong>URL very long ({urlStats.portableUrlLength.toLocaleString()} chars)</strong> — May not work in some browsers or when shared via messaging apps.
-                      Consider using Short Links or reducing features/notes.
+                      <strong>URL very long ({urlStats.portableUrlLength.toLocaleString()} chars)</strong> — May not work in some browsers.
                     </>
                   ) : (
                     <>
-                      <strong>URL is long ({urlStats.portableUrlLength.toLocaleString()} chars)</strong> — May be truncated when shared via some apps.
-                      Short Links are recommended for easier sharing.
+                      <strong>URL is long ({urlStats.portableUrlLength.toLocaleString()} chars)</strong> — May be truncated when shared.
                     </>
                   )}
                 </p>
@@ -254,30 +252,30 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
           </div>
 
           {/* Stakeholder Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
               Select Reports to Generate
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               {stakeholders.map(({ key, label, icon: Icon, description }) => (
                 <button
                   key={key}
                   onClick={() => toggleStakeholder(key)}
-                  className={`p-3 rounded-md border-2 text-left transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-md border-2 text-left transition-all touch-manipulation ${
                     selectedStakeholders.has(key)
                       ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-gray-200 hover:border-gray-300 active:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       selectedStakeholders.has(key) ? 'bg-[#253ff6] text-white' : 'bg-gray-100 text-gray-500'
                     }`}>
-                      <Icon size={16} weight="bold" />
+                      <Icon size={14} weight="bold" className="sm:w-4 sm:h-4" />
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{label}</p>
-                      <p className="text-xs text-gray-500">{description}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-xs sm:text-sm">{label}</p>
+                      <p className="text-xs text-gray-500 truncate">{description}</p>
                     </div>
                   </div>
                 </button>
@@ -286,22 +284,22 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
           </div>
 
           {/* Notes (collapsed by default) */}
-          <details className="mb-6">
-            <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+          <details className="mb-4 sm:mb-6">
+            <summary className="cursor-pointer text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3 flex items-center gap-2 touch-manipulation">
               <span>Add Notes (Optional)</span>
-              <span className="text-xs text-gray-400">Click to expand</span>
+              <span className="text-xs text-gray-400">Tap to expand</span>
             </summary>
-            <div className="space-y-3 mt-3">
+            <div className="space-y-2 sm:space-y-3 mt-2 sm:mt-3">
               {stakeholders.filter(s => selectedStakeholders.has(s.key)).map(({ key, label, icon: Icon }) => (
                 <div key={key} className="border border-gray-200 rounded-md overflow-hidden">
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200">
                     <Icon size={14} className="text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">{label} Notes</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">{label} Notes</span>
                   </div>
                   <textarea
                     value={notes[key]}
                     onChange={(e) => setNotes(prev => ({ ...prev, [key]: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm resize-none focus:outline-none"
+                    className="w-full px-3 py-2 text-sm resize-none focus:outline-none touch-manipulation"
                     rows={2}
                     placeholder={`Add notes for ${label.toLowerCase()}...`}
                   />
@@ -312,19 +310,19 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
 
           {/* Generated URLs */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Generated Report Links
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                Generated Links
               </label>
               <button
                 onClick={handleCopyAll}
-                className={`text-xs px-2 py-1 rounded transition-colors ${
+                className={`text-xs px-2 py-1.5 rounded transition-colors touch-manipulation ${
                   copiedUrl === 'all'
                     ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
                 }`}
               >
-                {copiedUrl === 'all' ? 'Copied all!' : 'Copy all links'}
+                {copiedUrl === 'all' ? 'Copied!' : 'Copy all'}
               </button>
             </div>
             <div className="space-y-2">
@@ -335,45 +333,49 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
                 return (
                   <div
                     key={key}
-                    className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border border-gray-200"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 sm:p-3 bg-gray-50 rounded-md border border-gray-200"
                   >
-                    <Icon size={16} className="text-gray-500 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 w-24">{label}:</span>
-                    <input
-                      type="text"
-                      value={url}
-                      readOnly
-                      className="flex-1 text-xs font-mono bg-white border border-gray-300 rounded px-2 py-1 text-gray-600 truncate"
-                      title={url}
-                    />
-                    <div className="flex items-center gap-1">
-                      {'share' in navigator && (
-                        <button
-                          onClick={() => handleShare(key)}
-                          className="p-1.5 rounded text-gray-500 hover:bg-gray-200 transition-colors"
-                          title="Share"
-                        >
-                          <ShareNetwork size={14} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleCopyUrl(key)}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                          isCopied
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-[#253ff6] text-white hover:bg-[#1a2eb8]'
-                        }`}
-                      >
-                        {isCopied ? (
-                          <span className="flex items-center gap-1">
-                            <Check size={14} /> Copied
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <Copy size={14} /> Copy
-                          </span>
+                    <div className="flex items-center gap-2 sm:w-auto">
+                      <Icon size={16} className="text-gray-500 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">{label}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={url}
+                        readOnly
+                        className="flex-1 text-xs font-mono bg-white border border-gray-300 rounded px-2 py-1.5 text-gray-600 truncate min-w-0"
+                        title={url}
+                      />
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {'share' in navigator && (
+                          <button
+                            onClick={() => handleShare(key)}
+                            className="p-2 sm:p-1.5 rounded text-gray-500 hover:bg-gray-200 active:bg-gray-200 transition-colors touch-manipulation"
+                            title="Share"
+                          >
+                            <ShareNetwork size={14} />
+                          </button>
                         )}
-                      </button>
+                        <button
+                          onClick={() => handleCopyUrl(key)}
+                          className={`px-3 py-1.5 sm:py-1 rounded text-xs sm:text-sm font-medium transition-colors touch-manipulation ${
+                            isCopied
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-[#253ff6] text-white hover:bg-[#1a2eb8] active:bg-[#1a2eb8]'
+                          }`}
+                        >
+                          {isCopied ? (
+                            <span className="flex items-center gap-1">
+                              <Check size={14} /> <span className="hidden sm:inline">Copied</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Copy size={14} /> <span className="hidden sm:inline">Copy</span>
+                            </span>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -383,19 +385,19 @@ export function ReportGenerator({ isOpen, onClose }: ReportGeneratorProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border-t border-gray-200 bg-gray-50">
           <div className="text-xs text-gray-500">
             {urlMode === 'short' ? (
               <span className="flex items-center gap-1">
-                <Desktop size={12} /> Report ID: <code className="bg-gray-200 px-1 rounded">{urls.shortId}</code>
+                <Desktop size={12} /> ID: <code className="bg-gray-200 px-1 rounded">{urls.shortId}</code>
               </span>
             ) : (
-              <span>Reports contain your current pricing data (read-only)</span>
+              <span>Reports contain your pricing data (read-only)</span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 active:bg-gray-300 transition-colors text-sm font-medium touch-manipulation"
           >
             Done
           </button>

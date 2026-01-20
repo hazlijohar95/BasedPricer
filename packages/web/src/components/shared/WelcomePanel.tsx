@@ -106,21 +106,21 @@ export function WelcomePanel() {
         aria-labelledby="welcome-panel-title"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[#e4e4e4]">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[#e4e4e4]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#253ff6] flex items-center justify-center">
-              <Lightning size={20} weight="fill" className="text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#253ff6] flex items-center justify-center flex-shrink-0">
+              <Lightning size={18} weight="fill" className="text-white sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 id="welcome-panel-title" className="text-lg font-semibold text-gray-900">
+              <h2 id="welcome-panel-title" className="text-base sm:text-lg font-semibold text-gray-900">
                 Welcome to BasedPricer
               </h2>
-              <p className="text-sm text-gray-500">Let's get you started</p>
+              <p className="text-xs sm:text-sm text-gray-500">Let's get you started</p>
             </div>
           </div>
           <button
             onClick={handleStartWithTemplate}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 active:bg-gray-100 rounded-lg transition-colors touch-manipulation"
             aria-label="Close panel"
           >
             <X size={20} className="text-gray-400" />
@@ -128,25 +128,25 @@ export function WelcomePanel() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <p className="text-gray-600 mb-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             How would you like to start?
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {/* Primary option - Analyze Codebase */}
             <button
               onClick={handleAnalyzeCodebase}
-              className="w-full p-4 text-left border-2 border-[#253ff6] bg-[rgba(37,63,246,0.02)] rounded-lg hover:bg-[rgba(37,63,246,0.06)] transition-all duration-200 group"
+              className="w-full p-3 sm:p-4 text-left border-2 border-[#253ff6] bg-[rgba(37,63,246,0.02)] rounded-lg hover:bg-[rgba(37,63,246,0.06)] active:bg-[rgba(37,63,246,0.06)] transition-all duration-200 group touch-manipulation"
             >
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-[rgba(37,63,246,0.08)] flex items-center justify-center flex-shrink-0">
-                  <Code size={24} weight="duotone" className="text-[#253ff6]" />
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[rgba(37,63,246,0.08)] flex items-center justify-center flex-shrink-0">
+                  <Code size={20} weight="duotone" className="text-[#253ff6] sm:w-6 sm:h-6" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Analyze My Codebase</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Connect GitHub and let AI detect your features and suggest pricing tiers
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Analyze My Codebase</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
+                    Connect GitHub and let AI detect features
                   </p>
                 </div>
               </div>
@@ -155,16 +155,16 @@ export function WelcomePanel() {
             {/* Secondary option - Template */}
             <button
               onClick={handleStartWithTemplate}
-              className="w-full p-4 text-left border border-[#e4e4e4] rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group"
+              className="w-full p-3 sm:p-4 text-left border border-[#e4e4e4] rounded-lg hover:border-gray-300 hover:bg-gray-50 active:bg-gray-50 transition-all duration-200 group touch-manipulation"
             >
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:bg-gray-100 transition-colors">
-                  <Sparkle size={24} weight="duotone" className="text-[#253ff6]" />
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:bg-gray-100 transition-colors">
+                  <Sparkle size={20} weight="duotone" className="text-[#253ff6] sm:w-6 sm:h-6" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">Use AI SaaS Template</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Pre-configured costs and tiers for AI-powered SaaS products
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-gray-900 text-sm sm:text-base">Use AI SaaS Template</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
+                    Pre-configured costs and tiers
                   </p>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function WelcomePanel() {
             {/* Tertiary option - Fresh Start */}
             <button
               onClick={handleStartFresh}
-              className="w-full p-3 text-left rounded-lg hover:bg-gray-50 transition-all duration-200 group"
+              className="w-full p-3 text-left rounded-lg hover:bg-gray-50 active:bg-gray-50 transition-all duration-200 group touch-manipulation"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:bg-gray-100 transition-colors">
@@ -189,17 +189,17 @@ export function WelcomePanel() {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#e4e4e4] bg-gray-50/50">
+        <div className="p-4 sm:p-6 border-t border-[#e4e4e4] bg-gray-50/50">
           {/* Currency selector */}
-          <div className="flex items-center justify-between mb-4">
-            <label htmlFor="currency-select" className="text-sm text-gray-600">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <label htmlFor="currency-select" className="text-xs sm:text-sm text-gray-600">
               Currency
             </label>
             <select
               id="currency-select"
               value={selectedCurrency}
               onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
-              className="text-sm border border-[#e4e4e4] rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#253ff6] focus:border-transparent"
+              className="text-sm border border-[#e4e4e4] rounded-lg px-3 py-2 sm:py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#253ff6] focus:border-transparent touch-manipulation"
             >
               {currencyOptions.map((curr) => (
                 <option key={curr.code} value={curr.code}>

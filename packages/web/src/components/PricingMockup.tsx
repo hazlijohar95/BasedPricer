@@ -199,26 +199,26 @@ export function PricingMockup() {
   // Edit mode view
   if (editingTier && editingTierData && editingConfig) {
     return (
-      <div className="h-[calc(100vh-8rem)] flex flex-col -mt-2">
+      <div className="min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] flex flex-col -mt-2">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 gap-3 flex-shrink-0">
           <button
             onClick={() => setEditingTier(null)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors touch-manipulation active:text-gray-900"
           >
             <ArrowLeft size={18} weight="bold" />
-            <span className="text-sm font-medium">Back to all tiers</span>
+            <span className="text-xs sm:text-sm font-medium">Back to all tiers</span>
           </button>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
             {/* Quick Tier Switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-[0.2rem]">
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-[0.2rem] overflow-x-auto w-full sm:w-auto">
               {visibleTiers.map((tier) => (
                 <button
                   key={tier.id}
                   onClick={() => { setEditingTier(tier.id); setFeatureSearch(''); }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-[0.2rem] transition-all ${
-                    editingTier === tier.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-[0.2rem] transition-all whitespace-nowrap touch-manipulation ${
+                    editingTier === tier.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 active:text-gray-700'
                   }`}
                 >
                   {tier.name}
@@ -236,33 +236,35 @@ export function PricingMockup() {
         </div>
 
         {/* Main Edit Area */}
-        <div className="flex-1 flex gap-10 items-start min-h-0">
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-10 items-stretch lg:items-start min-h-0 overflow-y-auto lg:overflow-visible">
           {/* Card Preview */}
-          <div className="flex flex-col items-center pt-6">
+          <div className="flex flex-col items-center pt-4 lg:pt-6 order-2 lg:order-1 pb-6 lg:pb-0">
             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-3 font-medium">Live Preview</p>
-            <PricingCard
-              tier={editingTierData}
-              config={editingConfig}
-              billingCycle={billingCycle}
-              isEditMode={true}
-              ctaClicked={ctaClicked === editingTier}
-              onCtaClick={() => handleCtaClick(editingTier)}
-            />
+            <div className="w-full max-w-[280px] sm:max-w-none">
+              <PricingCard
+                tier={editingTierData}
+                config={editingConfig}
+                billingCycle={billingCycle}
+                isEditMode={true}
+                ctaClicked={ctaClicked === editingTier}
+                onCtaClick={() => handleCtaClick(editingTier)}
+              />
+            </div>
           </div>
 
           {/* Edit Panel */}
-          <div className="flex-1 max-w-lg h-full flex flex-col">
-            <div className="bg-white rounded-[0.2rem] border border-gray-200 overflow-hidden shadow-sm flex flex-col h-full">
+          <div className="flex-1 max-w-full lg:max-w-lg lg:h-full flex flex-col order-1 lg:order-2">
+            <div className="bg-white rounded-[0.2rem] border border-gray-200 overflow-hidden shadow-sm flex flex-col lg:h-full">
               {/* Header */}
-              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex-shrink-0">
+              <div className="px-4 sm:px-5 py-3 bg-gray-50 border-b border-gray-100 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${editingConfig.highlighted ? 'bg-[#253ff6]' : 'bg-gray-300'}`} />
-                    <h3 className="font-semibold text-gray-900">Edit {editingTierData.name}</h3>
+                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Edit {editingTierData.name}</h3>
                   </div>
                   <button
                     onClick={() => resetTierConfig(editingTier)}
-                    className="p-1.5 hover:bg-gray-200 rounded-[0.2rem] transition-colors text-gray-400 hover:text-gray-600"
+                    className="p-2 sm:p-1.5 hover:bg-gray-200 rounded-[0.2rem] transition-colors text-gray-400 hover:text-gray-600 touch-manipulation active:bg-gray-200"
                     title="Reset to defaults"
                   >
                     <ArrowsClockwise size={14} />
@@ -280,14 +282,14 @@ export function PricingMockup() {
                   <button
                     key={tab.id}
                     onClick={() => setEditTab(tab.id)}
-                    className={`flex-1 py-3 text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 touch-manipulation ${
                       editTab === tab.id
                         ? 'text-[#253ff6] border-b-2 border-[#253ff6] bg-[rgba(37,63,246,0.02)]'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 active:bg-gray-50'
                     }`}
                   >
                     <tab.icon size={16} weight={editTab === tab.id ? 'duotone' : 'regular'} />
-                    {tab.label}
+                    <span className="hidden xs:inline">{tab.label}</span>
                   </button>
                 ))}
               </div>
@@ -295,19 +297,19 @@ export function PricingMockup() {
               <div className="flex-1 overflow-y-auto min-h-0">
                 {/* Pricing Tab */}
                 {editTab === 'pricing' && (
-                  <div className="p-5 space-y-5">
+                  <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
                     {editingTierData.id !== 'enterprise' ? (
-                      <div className="grid grid-cols-2 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                         <div>
                           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Monthly Price</label>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-400 font-medium">MYR</span>
+                            <span className="text-xs sm:text-sm text-gray-400 font-medium">MYR</span>
                             <input
                               type="number"
                               min="0"
                               value={editingConfig.monthlyPrice}
                               onChange={(e) => updateTierConfig(editingTier, { monthlyPrice: Math.max(0, Number(e.target.value)) })}
-                              className="input-field flex-1"
+                              className="input-field flex-1 text-sm touch-manipulation"
                             />
                           </div>
                         </div>
@@ -321,20 +323,20 @@ export function PricingMockup() {
                             )}
                           </label>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-400 font-medium">MYR</span>
+                            <span className="text-xs sm:text-sm text-gray-400 font-medium">MYR</span>
                             <input
                               type="number"
                               min="0"
                               value={editingConfig.annualPrice}
                               onChange={(e) => updateTierConfig(editingTier, { annualPrice: Math.max(0, Number(e.target.value)) })}
-                              className="input-field flex-1"
+                              className="input-field flex-1 text-sm touch-manipulation"
                             />
                           </div>
                           <p className="text-xs text-gray-400 mt-1.5">
-                            = MYR {Math.round(editingConfig.annualPrice / 12)}/mo billed annually
+                            = MYR {Math.round(editingConfig.annualPrice / 12)}/mo annually
                           </p>
                         </div>
-                        <div className="col-span-2">
+                        <div className="sm:col-span-2">
                           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Quick Annual Discount</label>
                           <div className="flex gap-2">
                             {DISCOUNT_PRESETS.map(discount => {
@@ -344,8 +346,8 @@ export function PricingMockup() {
                                 <button
                                   key={discount}
                                   onClick={() => updateTierConfig(editingTier, { annualPrice })}
-                                  className={`flex-1 py-2 text-sm font-medium rounded-[0.2rem] transition-all ${
-                                    isActive ? 'bg-[#253ff6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  className={`flex-1 py-2.5 sm:py-2 text-xs sm:text-sm font-medium rounded-[0.2rem] transition-all touch-manipulation ${
+                                    isActive ? 'bg-[#253ff6] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
                                   }`}
                                 >
                                   {discount}%
@@ -356,10 +358,10 @@ export function PricingMockup() {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Crown size={40} weight="duotone" className="text-amber-500 mx-auto mb-3" />
-                        <p className="text-base font-medium text-gray-700">Custom Pricing</p>
-                        <p className="text-sm mt-1">Enterprise tier uses custom pricing</p>
+                      <div className="text-center py-6 sm:py-8 text-gray-500">
+                        <Crown size={36} weight="duotone" className="text-amber-500 mx-auto mb-3 sm:w-10 sm:h-10" />
+                        <p className="text-sm sm:text-base font-medium text-gray-700">Custom Pricing</p>
+                        <p className="text-xs sm:text-sm mt-1">Enterprise tier uses custom pricing</p>
                       </div>
                     )}
                     <div className="pt-4 border-t border-gray-100">
@@ -368,7 +370,7 @@ export function PricingMockup() {
                         type="text"
                         value={editingConfig.tagline}
                         onChange={(e) => updateTierConfig(editingTier, { tagline: e.target.value })}
-                        className="input-field"
+                        className="input-field text-sm touch-manipulation"
                         placeholder="e.g. Perfect for small teams"
                       />
                     </div>
@@ -377,7 +379,7 @@ export function PricingMockup() {
 
                 {/* Appearance Tab */}
                 {editTab === 'appearance' && (
-                  <div className="p-5 space-y-5">
+                  <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-1">
@@ -396,7 +398,7 @@ export function PricingMockup() {
                         type="text"
                         value={editingConfig.badgeText}
                         onChange={(e) => updateTierConfig(editingTier, { badgeText: e.target.value })}
-                        className="input-field -mt-2"
+                        className="input-field -mt-2 text-sm touch-manipulation"
                         placeholder="Badge text (e.g. Most Popular)"
                       />
                     )}
@@ -408,12 +410,12 @@ export function PricingMockup() {
                           type="text"
                           value={editingConfig.ctaText}
                           onChange={(e) => updateTierConfig(editingTier, { ctaText: e.target.value })}
-                          className="input-field"
+                          className="input-field text-sm touch-manipulation"
                         />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Button Style</label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
                           {([
                             { id: 'primary', label: 'Primary', preview: 'bg-[#253ff6]' },
                             { id: 'secondary', label: 'Dark', preview: 'bg-gray-900' },
@@ -422,13 +424,13 @@ export function PricingMockup() {
                             <button
                               key={style.id}
                               onClick={() => updateTierConfig(editingTier, { ctaStyle: style.id })}
-                              className={`py-3 text-sm font-medium rounded-[0.2rem] transition-all border-2 ${
+                              className={`py-2.5 sm:py-3 text-xs sm:text-sm font-medium rounded-[0.2rem] transition-all border-2 touch-manipulation ${
                                 editingConfig.ctaStyle === style.id
                                   ? 'border-[#253ff6] bg-[rgba(37,63,246,0.04)]'
-                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300'
+                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 active:bg-gray-100'
                               }`}
                             >
-                              <div className={`w-8 h-2 rounded-[0.2rem] mx-auto mb-2 ${style.preview}`} />
+                              <div className={`w-6 sm:w-8 h-2 rounded-[0.2rem] mx-auto mb-1.5 sm:mb-2 ${style.preview}`} />
                               {style.label}
                             </button>
                           ))}
@@ -439,9 +441,9 @@ export function PricingMockup() {
                     <div className="pt-4 border-t border-gray-100 space-y-4">
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Options</label>
                       <div className="flex items-center justify-between py-1">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           {editingConfig.showLimits ? <Eye size={18} className="text-gray-400" /> : <EyeSlash size={18} className="text-gray-400" />}
-                          <span className="text-sm text-gray-700">Show feature limits</span>
+                          <span className="text-xs sm:text-sm text-gray-700">Show feature limits</span>
                         </div>
                         <Toggle
                           checked={editingConfig.showLimits}
@@ -449,16 +451,16 @@ export function PricingMockup() {
                         />
                       </div>
                       <div className="flex items-center justify-between py-1">
-                        <span className="text-sm text-gray-700">Visible features</span>
-                        <div className="flex items-center gap-1.5">
+                        <span className="text-xs sm:text-sm text-gray-700">Visible features</span>
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                           {[4, 5, 6, 8].map(num => (
                             <button
                               key={num}
                               onClick={() => updateTierConfig(editingTier, { maxVisibleFeatures: num })}
-                              className={`w-9 h-9 text-sm font-medium rounded-[0.2rem] transition-all ${
+                              className={`w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm font-medium rounded-[0.2rem] transition-all touch-manipulation ${
                                 editingConfig.maxVisibleFeatures === num
                                   ? 'bg-[#253ff6] text-white'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
                               }`}
                             >
                               {num}
@@ -473,15 +475,15 @@ export function PricingMockup() {
                 {/* Features Tab */}
                 {editTab === 'features' && (
                   <div className="flex flex-col h-full">
-                    <div className="p-5 border-b border-gray-100">
+                    <div className="p-4 sm:p-5 border-b border-gray-100">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Featured on Card ({editingConfig.highlightedFeatures.length})
+                          Featured ({editingConfig.highlightedFeatures.length})
                         </span>
                         {editingConfig.highlightedFeatures.length > 0 && (
                           <button
                             onClick={() => updateTierConfig(editingTier, { highlightedFeatures: [] })}
-                            className="text-xs text-red-500 hover:text-red-600 font-medium"
+                            className="text-xs text-red-500 hover:text-red-600 active:text-red-600 font-medium touch-manipulation p-1"
                           >
                             Clear all
                           </button>
@@ -498,18 +500,18 @@ export function PricingMockup() {
                                 onDragStart={() => handleDragStart(featureId)}
                                 onDragOver={(e) => handleDragOver(e, editingTier, index)}
                                 onDragEnd={handleDragEnd}
-                                className={`flex items-center gap-3 p-2.5 rounded-[0.2rem] bg-gray-50 group transition-all ${
+                                className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-[0.2rem] bg-gray-50 group transition-all ${
                                   draggedFeature === featureId ? 'opacity-50 ring-1 ring-dashed ring-[#253ff6]' : ''
                                 }`}
                               >
-                                <DotsSixVertical size={14} className="text-gray-300 cursor-grab flex-shrink-0" />
+                                <DotsSixVertical size={14} className="text-gray-300 cursor-grab flex-shrink-0 hidden sm:block" />
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-sm text-gray-700 block truncate">{getFeatureName(featureId)}</span>
+                                  <span className="text-xs sm:text-sm text-gray-700 block truncate">{getFeatureName(featureId)}</span>
                                   {limit && <span className="text-xs text-gray-400">{limit}</span>}
                                 </div>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); removeFeatureFromHighlights(editingTier, featureId); }}
-                                  className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-[0.2rem] transition-all flex-shrink-0"
+                                  className="p-2 sm:p-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-red-50 active:bg-red-50 rounded-[0.2rem] transition-all flex-shrink-0 touch-manipulation"
                                 >
                                   <Trash size={12} className="text-red-500" />
                                 </button>
@@ -518,16 +520,16 @@ export function PricingMockup() {
                           })}
                         </div>
                       ) : (
-                        <div className="text-center py-6 text-gray-400 bg-gray-50 rounded-[0.2rem]">
-                          <ListBullets size={28} className="mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No features selected</p>
+                        <div className="text-center py-4 sm:py-6 text-gray-400 bg-gray-50 rounded-[0.2rem]">
+                          <ListBullets size={24} className="mx-auto mb-2 opacity-50 sm:w-7 sm:h-7" />
+                          <p className="text-xs sm:text-sm">No features selected</p>
                           <p className="text-xs mt-0.5">Add features from below</p>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex-1 p-5 flex flex-col min-h-0">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1 p-4 sm:p-5 flex flex-col min-h-0">
+                      <div className="flex items-center justify-between mb-2 sm:mb-3">
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Available Features</span>
                         <span className="text-xs text-gray-400">
                           {editingTierData.includedFeatures.length - editingConfig.highlightedFeatures.length} remaining
@@ -537,7 +539,7 @@ export function PricingMockup() {
                         value={featureSearch}
                         onChange={setFeatureSearch}
                         placeholder="Search features..."
-                        className="mb-3"
+                        className="mb-2 sm:mb-3"
                       />
                       <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
                         {Object.entries(filteredAvailableFeatures).length > 0 ? (
@@ -548,25 +550,25 @@ export function PricingMockup() {
                               <div key={categoryId}>
                                 <button
                                   onClick={() => toggleCategory(categoryId)}
-                                  className="flex items-center gap-2 w-full py-2 px-1 text-left hover:bg-gray-50 rounded-[0.2rem] transition-colors"
+                                  className="flex items-center gap-2 w-full py-2 px-1 text-left hover:bg-gray-50 active:bg-gray-50 rounded-[0.2rem] transition-colors touch-manipulation"
                                 >
                                   {isExpanded ? <CaretDown size={14} className="text-gray-400" /> : <CaretRight size={14} className="text-gray-400" />}
-                                  <span className="text-sm font-medium text-gray-600">{category?.name || categoryId}</span>
+                                  <span className="text-xs sm:text-sm font-medium text-gray-600">{category?.name || categoryId}</span>
                                   <span className="text-xs text-gray-400 ml-auto bg-gray-100 px-1.5 py-0.5 rounded">{featureIds.length}</span>
                                 </button>
                                 {isExpanded && (
-                                  <div className="ml-5 space-y-0.5 mb-2">
+                                  <div className="ml-4 sm:ml-5 space-y-0.5 mb-2">
                                     {featureIds.map(featureId => {
                                       const limit = getFeatureLimit(editingTierData, featureId);
                                       return (
                                         <button
                                           key={featureId}
                                           onClick={() => addFeatureToHighlights(editingTier, featureId)}
-                                          className="flex items-center gap-2 w-full p-2 rounded-[0.2rem] hover:bg-[rgba(37,63,246,0.04)] transition-all text-left group"
+                                          className="flex items-center gap-2 w-full p-2 rounded-[0.2rem] hover:bg-[rgba(37,63,246,0.04)] active:bg-[rgba(37,63,246,0.04)] transition-all text-left group touch-manipulation"
                                         >
                                           <Plus size={12} className="text-gray-300 group-hover:text-[#253ff6] flex-shrink-0" />
                                           <div className="flex-1 min-w-0">
-                                            <span className="text-sm text-gray-600 block truncate">{getFeatureName(featureId)}</span>
+                                            <span className="text-xs sm:text-sm text-gray-600 block truncate">{getFeatureName(featureId)}</span>
                                             {limit && <span className="text-xs text-gray-400">{limit}</span>}
                                           </div>
                                         </button>
@@ -578,8 +580,8 @@ export function PricingMockup() {
                             );
                           })
                         ) : (
-                          <div className="text-center py-6 text-gray-400">
-                            <p className="text-sm">{featureSearch ? 'No matching features' : 'All features selected'}</p>
+                          <div className="text-center py-4 sm:py-6 text-gray-400">
+                            <p className="text-xs sm:text-sm">{featureSearch ? 'No matching features' : 'All features selected'}</p>
                           </div>
                         )}
                       </div>
@@ -596,13 +598,13 @@ export function PricingMockup() {
 
   // Default view - all cards
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Back navigation */}
       {previousTab && previousTab !== 'mockup' && (
         <div className="flex items-center">
           <button
             onClick={() => navigateTo(previousTab)}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 active:text-gray-700 transition-colors text-xs sm:text-sm touch-manipulation"
           >
             <ArrowLeft size={16} weight="bold" />
             <span>Back to {previousTab === 'overview' ? 'Overview' : previousTab === 'pricing' ? 'Calculator' : previousTab === 'tiers' ? 'Tiers' : previousTab === 'cogs' ? 'COGS' : previousTab === 'features' ? 'Features' : previousTab === 'analyze' ? 'Analyzer' : previousTab}</span>
@@ -610,9 +612,9 @@ export function PricingMockup() {
         </div>
       )}
 
-      <div className="text-center max-w-2xl mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-900">Pricing Mockup</h1>
-        <p className="text-gray-500 mt-2">Click on any card to customize and preview changes</p>
+      <div className="text-center max-w-2xl mx-auto px-4">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Pricing Mockup</h1>
+        <p className="text-gray-500 mt-1 sm:mt-2 text-xs sm:text-base">Click on any card to customize and preview changes</p>
       </div>
 
       <div className="flex justify-center">
@@ -623,7 +625,7 @@ export function PricingMockup() {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-5 items-start">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 items-start px-4 sm:px-0">
         {visibleTiers.map((tier) => (
           <PricingCard
             key={tier.id}

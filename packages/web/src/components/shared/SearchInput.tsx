@@ -27,12 +27,12 @@ export function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full input-field pl-9 pr-8"
+        className="w-full input-field pl-9 pr-9 text-sm touch-manipulation"
       />
       {showClear && value && (
         <button
           onClick={() => onChange('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-gray-600 p-1 touch-manipulation"
         >
           <X size={14} />
         </button>
